@@ -6,6 +6,7 @@ import TradesList from './TradesList'; // We'll create this new component
 import FilterPanel from './FilterPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from '@/lib/utils';
 
 export const Dashboard = ({ 
   walletAddress, 
@@ -15,7 +16,9 @@ export const Dashboard = ({
   currentConnectedChainId, 
   setErrorApp 
 }) => {
-  const [selectedChains, setSelectedChains] = useState([SUPPORTED_CHAINS.ETHEREUM, SUPPORTED_CHAINS.BSC]);
+  const [selectedChains, setSelectedChains] = useState([
+    SUPPORTED_CHAINS.ETHEREUM
+  ]);
   const [timeFilter, setTimeFilter] = useState('all');
   const [txTypeFilter, setTxTypeFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('transactions');
@@ -41,13 +44,18 @@ export const Dashboard = ({
     checkEligibility();
   }, [walletAddress]);
 
-  // Existing filter functions
-  const toggleChainFilter = (chainId) => {
-    setSelectedChains(prev =>
-      prev.includes(chainId) ? prev.filter(c => c !== chainId) : [...prev, chainId]
-    );
+  // Add this validation to toggleChainFilter
+  const toggleChainFilter = useCallback((chainId) => {
+    setSelectedChains(prev => {
+      if (prev.includes(chainId)) {
+        // Don't allow deselecting if it's the last chain
+        if (prev.length === 1) return prev;
+        return prev.filter(c => c !== chainId);
+      }
+      return [...prev, chainId];
+    });
     setCurrentPage(1);
-  };
+  }, []);
 
   const updateTimeFilter = (value) => {
     setTimeFilter(value);
@@ -97,29 +105,51 @@ export const Dashboard = ({
             itemsPerPage={itemsPerPage}
             handleItemsPerPageChange={handleItemsPerPageChange}
           />
-          
-          {/* Tabs for Transactions/Trades */}
+
           <Tabs defaultValue="transactions" value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
-            <TabsList className="grid grid-cols-2 mb-6 bg-zinc-900 p-1 rounded-full overflow-hidden">
-              <TabsTrigger 
-                value="transactions" 
-                className="rounded-full px-6 py-3 text-sm font-medium transition-all"
+            <TabsList
+            className="mb-6 bg-zinc-900 p-1 px-2 rounded-full overflow-hidden flex justify-between w-fit mx-auto"
+          >
+
+              <TabsTrigger
+                value="transactions"
+                className={cn(
+                  "rounded-full px-6 py-3 text-sm font-medium transition-all",
+                  activeTab === "transactions"
+                    ? "bg-white"
+                    : "bg-transparent"
+                )}
               >
-                <span className={activeTab === "transactions" ? "bg-gradient-to-b from-white to-white/80 bg-clip-text text-transparent" : "text-gray-400"}>
+                <span className={cn(
+                  "transition-colors",
+                  activeTab === "transactions"
+                    ? "bg-gradient-to-b from-black to-zinc-800 bg-clip-text text-transparent"
+                    : "text-gray-400"
+                )}>
                   Receive or Send
                 </span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="trades" 
-                className="rounded-full px-6 py-3 text-sm font-medium transition-all"
+
+              <TabsTrigger
+                value="trades"
+                className={cn(
+                  "rounded-full px-6 py-3 text-sm font-medium transition-all",
+                  activeTab === "trades"
+                    ? "bg-white"
+                    : "bg-transparent"
+                )}
               >
-                <span className={activeTab === "trades" ? "bg-gradient-to-b from-white to-white/80 bg-clip-text text-transparent" : "text-gray-400"}>
+                <span className={cn(
+                  "transition-colors",
+                  activeTab === "trades"
+                    ? "bg-gradient-to-b from-black to-zinc-800 bg-clip-text text-transparent"
+                    : "text-gray-400"
+                )}>
                   Traded
                 </span>
               </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="transactions" className="mt-0">
+            <TabsContent value="transactions" className="mt-7">
               <TransactionsList
                 walletAddress={walletAddress}
                 selectedChains={selectedChains}

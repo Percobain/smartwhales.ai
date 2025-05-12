@@ -35,10 +35,10 @@ const PortfolioOverview = ({
     : 'Connect Wallet';
 
   // Reset local errors
-  const resetLocalErrors = () => {
+  const resetLocalErrors = React.useCallback(() => {
     setError(null);
     if (setErrorApp) setErrorApp('');
-  };
+  }, [setErrorApp]);
 
   // Fetch portfolio data
   useEffect(() => {
@@ -107,7 +107,7 @@ const PortfolioOverview = ({
     };
 
     fetchData();
-  }, [walletAddress, selectedChains, setErrorApp]);
+  }, [walletAddress, selectedChains, setErrorApp, resetLocalErrors]);
 
   // Handle copy referral link
   const handleCopyReferral = () => {

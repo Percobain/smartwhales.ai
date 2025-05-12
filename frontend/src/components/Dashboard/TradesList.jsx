@@ -251,185 +251,187 @@ const TradesList = ({
   }
 
   return (
-    <ScrollArea className="h-[600px] pr-2">
-      {paginatedGroups.map(group => (
-        <div key={group.date} className="mb-8 last:mb-0">
-          {/* Date header with purple accent */}
-          <div className="flex items-center mb-4">
-            <div className="w-2 h-2 bg-[#8A2BE2] rounded-full mr-2"></div>
-            <h3 className="text-sm font-medium text-white">
-              {group.date}
-            </h3>
-          </div>
-          
-          <div className="space-y-4">
-            {group.transactions.map(tx => {
-              const { sentTokens, receivedTokens, chainId } = getTradeInfo(tx);
-              const date = new Date(tx.block_signed_at);
-              // Use the proper explorer for the current chain
-              const explorerUrl = `${getChainExplorer(tx.chain_id)}/tx/${tx.tx_hash}`;
+    <div className="flex flex-col h-full">
+      <ScrollArea className="h-[calc(100vh-300px)]">
+        {paginatedGroups.map(group => (
+          <div key={group.date} className="mb-8 last:mb-0">
+            {/* Date header with purple accent */}
+            <div className="flex items-center mb-4">
+              <div className="w-2 h-2 bg-[#8A2BE2] rounded-full mr-2"></div>
+              <h3 className="text-sm font-medium text-white">
+                {group.date}
+              </h3>
+            </div>
+            
+            <div className="space-y-4">
+              {group.transactions.map(tx => {
+                const { sentTokens, receivedTokens, chainId } = getTradeInfo(tx);
+                const date = new Date(tx.block_signed_at);
+                // Use the proper explorer for the current chain
+                const explorerUrl = `${getChainExplorer(tx.chain_id)}/tx/${tx.tx_hash}`;
 
-              return (
-                <div 
-                  key={tx.tx_hash} 
-                  className="bg-zinc-900/70 border border-zinc-800 rounded-lg p-4 hover:bg-zinc-800/80 transition-all backdrop-blur-sm shadow-lg"
-                >
-                  {/* Header with chain and time */}
-                  <div className="flex justify-between items-center mb-4">
-                    <Badge variant="outline" className="bg-indigo-900/20 text-indigo-300 border-indigo-700/30">
-                      <FaExchangeAlt className="mr-1" /> Swap
-                    </Badge>
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        variant="outline" 
-                        className="text-xs px-2 py-1 bg-zinc-800/80 border-zinc-700 text-gray-300"
-                      >
-                        {getChainNameFromId(tx.chain_id)}
+                return (
+                  <div 
+                    key={tx.tx_hash} 
+                    className="bg-zinc-900/70 border border-zinc-800 rounded-lg p-4 hover:bg-zinc-800/80 transition-all backdrop-blur-sm shadow-lg"
+                  >
+                    {/* Header with chain and time */}
+                    <div className="flex justify-between items-center mb-4">
+                      <Badge variant="outline" className="bg-indigo-900/20 text-indigo-300 border-indigo-700/30">
+                        <FaExchangeAlt className="mr-1" /> Swap
                       </Badge>
-                      <span className="text-xs text-gray-400">
-                        {format(date, 'h:mm a')}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Trade visualization with improved aesthetics */}
-                  <div className="relative bg-black/30 rounded-lg p-4 border border-zinc-800/80 backdrop-blur-sm">
-                    {/* Purple glow effect */}
-                    <div className="absolute inset-0 bg-[#8A2BE2]/5 rounded-lg"></div>
-                    
-                    <div className="relative z-10 flex items-center justify-between">
-                      {/* Sent tokens with chain logo fallback */}
-                      <div className="flex-1">
-                        {sentTokens.length > 0 ? (
-                          <div>
-                            {sentTokens.map((token, i) => (
-                              <div key={i} className="mb-2 last:mb-0 flex items-center">
-                                <Avatar className="w-10 h-10 mr-3 bg-zinc-800 border border-zinc-700">
-                                  {getTokenLogo(token, token.chainId) ? (
-                                    <img src={getTokenLogo(token, token.chainId)} alt={token.symbol} className="rounded-full" />
-                                  ) : (
-                                    <div className="flex items-center justify-center w-full h-full text-xs font-bold">
-                                      {token.symbol?.slice(0, 3)}
-                                    </div>
-                                  )}
-                                </Avatar>
-                                <div>
-                                  <div className="text-rose-400 font-medium">
-                                    -{token.amount.toFixed(6)} {token.symbol}
-                                  </div>
-                                  {token.value > 0 && (
-                                    <div className="text-gray-400 text-sm">
-                                      ${token.value.toFixed(2)}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-gray-500 italic flex items-center">
-                            <Avatar className="w-10 h-10 mr-3 bg-zinc-800/50 border border-zinc-700/50">
-                              {getChainLogo(chainId) ? (
-                                <img src={getChainLogo(chainId)} alt={getChainNameFromId(chainId)} className="rounded-full opacity-50" />
-                              ) : (
-                                <div className="text-gray-500 text-xs">?</div>
-                              )}
-                            </Avatar>
-                            <div>Unknown input</div>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant="outline" 
+                          className="text-xs px-2 py-1 bg-zinc-800/80 border-zinc-700 text-gray-300"
+                        >
+                          {getChainNameFromId(tx.chain_id)}
+                        </Badge>
+                        <span className="text-xs text-gray-400">
+                          {format(date, 'h:mm a')}
+                        </span>
                       </div>
+                    </div>
+                    
+                    {/* Trade visualization with improved aesthetics */}
+                    <div className="relative bg-black/30 rounded-lg p-4 border border-zinc-800/80 backdrop-blur-sm">
+                      {/* Purple glow effect */}
+                      <div className="absolute inset-0 bg-[#8A2BE2]/5 rounded-lg"></div>
                       
-                      {/* Arrow with gradient */}
-                      <div className="flex-shrink-0 mx-4">
-                        <div className="relative px-3 py-1">
-                          <div className="absolute inset-0 bg-indigo-900/20 rounded-full blur-sm"></div>
-                          <FaArrowRight className="text-[#8A2BE2] text-xl relative z-10" />
+                      <div className="relative z-10 flex items-center justify-between">
+                        {/* Sent tokens with chain logo fallback */}
+                        <div className="flex-1">
+                          {sentTokens.length > 0 ? (
+                            <div>
+                              {sentTokens.map((token, i) => (
+                                <div key={i} className="mb-2 last:mb-0 flex items-center">
+                                  <Avatar className="w-10 h-10 mr-3 bg-zinc-800 border border-zinc-700">
+                                    {getTokenLogo(token, token.chainId) ? (
+                                      <img src={getTokenLogo(token, token.chainId)} alt={token.symbol} className="rounded-full" />
+                                    ) : (
+                                      <div className="flex items-center justify-center w-full h-full text-xs font-bold">
+                                        {token.symbol?.slice(0, 3)}
+                                      </div>
+                                    )}
+                                  </Avatar>
+                                  <div>
+                                    <div className="text-rose-400 font-medium">
+                                      -{token.amount.toFixed(6)} {token.symbol}
+                                    </div>
+                                    {token.value > 0 && (
+                                      <div className="text-gray-400 text-sm">
+                                        ${token.value.toFixed(2)}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-gray-500 italic flex items-center">
+                              <Avatar className="w-10 h-10 mr-3 bg-zinc-800/50 border border-zinc-700/50">
+                                {getChainLogo(chainId) ? (
+                                  <img src={getChainLogo(chainId)} alt={getChainNameFromId(chainId)} className="rounded-full opacity-50" />
+                                ) : (
+                                  <div className="text-gray-500 text-xs">?</div>
+                                )}
+                              </Avatar>
+                              <div>Unknown input</div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Arrow with gradient */}
+                        <div className="flex-shrink-0 mx-4">
+                          <div className="relative px-3 py-1">
+                            <div className="absolute inset-0 bg-indigo-900/20 rounded-full blur-sm"></div>
+                            <FaArrowRight className="text-[#8A2BE2] text-xl relative z-10" />
+                          </div>
+                        </div>
+                        
+                        {/* Received tokens with chain logo fallback */}
+                        <div className="flex-1 text-right">
+                          {receivedTokens.length > 0 ? (
+                            <div>
+                              {receivedTokens.map((token, i) => (
+                                <div key={i} className="mb-2 last:mb-0 flex items-center justify-end">
+                                  <div className="text-right mr-3">
+                                    <div className="text-emerald-400 font-medium">
+                                      +{token.amount.toFixed(6)} {token.symbol}
+                                    </div>
+                                    {token.value > 0 && (
+                                      <div className="text-gray-400 text-sm">
+                                        ${token.value.toFixed(2)}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Avatar className="w-10 h-10 bg-zinc-800 border border-zinc-700">
+                                    {getTokenLogo(token, token.chainId) ? (
+                                      <img src={getTokenLogo(token, token.chainId)} alt={token.symbol} className="rounded-full" />
+                                    ) : (
+                                      <div className="flex items-center justify-center w-full h-full text-xs font-bold">
+                                        {token.symbol?.slice(0, 3)}
+                                      </div>
+                                    )}
+                                  </Avatar>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-gray-500 italic flex items-center justify-end">
+                              <div>Unknown output</div>
+                              <Avatar className="w-10 h-10 ml-3 bg-zinc-800/50 border border-zinc-700/50">
+                                {getChainLogo(chainId) ? (
+                                  <img src={getChainLogo(chainId)} alt={getChainNameFromId(chainId)} className="rounded-full opacity-50" />
+                                ) : (
+                                  <div className="text-gray-500 text-xs">?</div>
+                                )}
+                              </Avatar>
+                            </div>
+                          )}
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Footer with additional info */}
+                    <div className="flex justify-between items-center mt-4 pt-2 border-t border-zinc-800/50">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="flex items-center text-gray-400 hover:text-gray-300">
+                            <FaCircleInfo className="mr-1 text-xs" />
+                            <span className="text-sm">Transaction Details</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" className="bg-black border border-gray-800">
+                            <div className="text-xs p-2">
+                              <p className="mb-1">Chain: {getChainNameFromId(tx.chain_id)}</p>
+                              <p className="truncate max-w-60 mb-1">Tx: {tx.tx_hash}</p>
+                              <p>Time: {format(date, 'MMM d, yyyy h:mm:ss a')}</p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                       
-                      {/* Received tokens with chain logo fallback */}
-                      <div className="flex-1 text-right">
-                        {receivedTokens.length > 0 ? (
-                          <div>
-                            {receivedTokens.map((token, i) => (
-                              <div key={i} className="mb-2 last:mb-0 flex items-center justify-end">
-                                <div className="text-right mr-3">
-                                  <div className="text-emerald-400 font-medium">
-                                    +{token.amount.toFixed(6)} {token.symbol}
-                                  </div>
-                                  {token.value > 0 && (
-                                    <div className="text-gray-400 text-sm">
-                                      ${token.value.toFixed(2)}
-                                    </div>
-                                  )}
-                                </div>
-                                <Avatar className="w-10 h-10 bg-zinc-800 border border-zinc-700">
-                                  {getTokenLogo(token, token.chainId) ? (
-                                    <img src={getTokenLogo(token, token.chainId)} alt={token.symbol} className="rounded-full" />
-                                  ) : (
-                                    <div className="flex items-center justify-center w-full h-full text-xs font-bold">
-                                      {token.symbol?.slice(0, 3)}
-                                    </div>
-                                  )}
-                                </Avatar>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-gray-500 italic flex items-center justify-end">
-                            <div>Unknown output</div>
-                            <Avatar className="w-10 h-10 ml-3 bg-zinc-800/50 border border-zinc-700/50">
-                              {getChainLogo(chainId) ? (
-                                <img src={getChainLogo(chainId)} alt={getChainNameFromId(chainId)} className="rounded-full opacity-50" />
-                              ) : (
-                                <div className="text-gray-500 text-xs">?</div>
-                              )}
-                            </Avatar>
-                          </div>
-                        )}
-                      </div>
+                      <a 
+                        href={explorerUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs flex items-center text-[#8A2BE2] hover:text-purple-400 transition-colors"
+                      >
+                        <span className="mr-1">View transaction</span>
+                        <FaExternalLinkAlt size={10} />
+                      </a>
                     </div>
                   </div>
-                  
-                  {/* Footer with additional info */}
-                  <div className="flex justify-between items-center mt-4 pt-2 border-t border-zinc-800/50">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger className="flex items-center text-gray-400 hover:text-gray-300">
-                          <FaCircleInfo className="mr-1 text-xs" />
-                          <span className="text-sm">Transaction Details</span>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-black border border-gray-800">
-                          <div className="text-xs p-2">
-                            <p className="mb-1">Chain: {getChainNameFromId(tx.chain_id)}</p>
-                            <p className="truncate max-w-60 mb-1">Tx: {tx.tx_hash}</p>
-                            <p>Time: {format(date, 'MMM d, yyyy h:mm:ss a')}</p>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
-                    <a 
-                      href={explorerUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs flex items-center text-[#8A2BE2] hover:text-purple-400 transition-colors"
-                    >
-                      <span className="mr-1">View transaction</span>
-                      <FaExternalLinkAlt size={10} />
-                    </a>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </ScrollArea>
       
-      {/* Pagination with Hero.jsx styling */}
+      {/* Pagination outside scroll area */}
       {totalPages > 1 && (
-        <div className="py-6 mt-2">
+        <div className="pt-6 mt-2 border-t border-gray-800">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -437,7 +439,7 @@ const TradesList = ({
           />
         </div>
       )}
-    </ScrollArea>
+    </div>
   );
 };
 

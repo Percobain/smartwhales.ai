@@ -1,5 +1,5 @@
 import React from 'react';
-import { SUPPORTED_CHAINS, getChainNameFromId } from '../../services/api';
+import { SUPPORTED_CHAINS, getChainLogo, getChainNameFromId } from '../../services/api';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,14 +24,24 @@ const FilterButton = ({ label, onClick, isActive, className = '' }) => (
 
 const FilterPanel = ({ 
   selectedChains, 
+  toggleChainFilter, 
   timeFilter, 
-  txTypeFilter,
-  toggleChainFilter,
-  updateTimeFilter,
-  updateTxTypeFilter,
+  updateTimeFilter, 
+  txTypeFilter, 
+  updateTxTypeFilter, 
   itemsPerPage,
   handleItemsPerPageChange
 }) => {
+  
+  const availableChains = [
+    SUPPORTED_CHAINS.ETHEREUM,
+    SUPPORTED_CHAINS.BSC,
+    SUPPORTED_CHAINS.POLYGON,
+    SUPPORTED_CHAINS.ARBITRUM,
+    SUPPORTED_CHAINS.OPTIMISM,
+    SUPPORTED_CHAINS.BITCOIN
+  ];
+  
   return (
     <Card className="bg-black border border-gray-800 shadow-lg">
       <CardContent className="p-5">
@@ -43,13 +53,26 @@ const FilterPanel = ({
               <h3 className="text-xs font-medium text-white uppercase tracking-wider">Chains</h3>
             </div>
             <div className="flex flex-wrap gap-2">
-              {Object.entries(SUPPORTED_CHAINS).map(([name, id]) => (
-                <FilterButton 
-                  key={id} 
-                  label={getChainNameFromId(id)} 
-                  onClick={() => toggleChainFilter(id)} 
-                  isActive={selectedChains.includes(id)} 
-                />
+              {availableChains.map(chainId => (
+                <button
+                  key={chainId}
+                  onClick={() => toggleChainFilter(chainId)}
+                  className={cn(
+                    "flex items-center text-xs px-3 py-1 h-8 rounded-full transition-all",
+                    selectedChains.includes(chainId)
+                      ? "bg-[#8A2BE2] hover:bg-purple-700 text-white shadow-md shadow-purple-900/20"
+                      : "bg-black border border-gray-800 hover:bg-gray-900 hover:border-gray-700 text-gray-400"
+                  )}
+                >
+                  {getChainLogo(chainId) && (
+                    <img 
+                      src={getChainLogo(chainId)} 
+                      alt={getChainNameFromId(chainId)}
+                      className="w-5 h-5 mr-2"
+                    />
+                  )}
+                  {getChainNameFromId(chainId)}
+                </button>
               ))}
             </div>
           </div>
