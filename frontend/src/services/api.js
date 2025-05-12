@@ -7,11 +7,11 @@ export const SUPPORTED_CHAINS = {
   POLYGON: '137',
   ARBITRUM: '42161',
   OPTIMISM: '10',
-  BITCOIN: 'btc-mainnet'
+  // BITCOIN: 'btc-mainnet'
 };
 
 export const chainIdToGoldRushChainName = (chainId) => {
-  if (chainId === SUPPORTED_CHAINS.BITCOIN) return 'btc-mainnet';
+  // if (chainId === SUPPORTED_CHAINS.BITCOIN) return 'btc-mainnet';
   
   const chainMap = {
     '1': 'eth-mainnet',
@@ -24,7 +24,7 @@ export const chainIdToGoldRushChainName = (chainId) => {
 };
 
 export const getChainNameFromId = (chainId) => {
-  if (chainId === SUPPORTED_CHAINS.BITCOIN) return 'Bitcoin';
+  // if (chainId === SUPPORTED_CHAINS.BITCOIN) return 'Bitcoin';
   
   const chainNames = {
     [SUPPORTED_CHAINS.ETHEREUM]: 'Ethereum',
@@ -43,7 +43,7 @@ export const getChainExplorer = (chainId) => {
     case SUPPORTED_CHAINS.POLYGON: return 'https://polygonscan.com';
     case SUPPORTED_CHAINS.ARBITRUM: return 'https://arbiscan.io';
     case SUPPORTED_CHAINS.OPTIMISM: return 'https://optimistic.etherscan.io';
-    case SUPPORTED_CHAINS.BITCOIN: return 'https://mempool.space';
+    // case SUPPORTED_CHAINS.BITCOIN: return 'https://mempool.space';
     default: return 'https://blockscan.com';
   }
 };
@@ -91,20 +91,20 @@ export async function getTokenBalances(chainId, walletAddress) {
   if (!goldrushChainName) throw new Error(`Unsupported chain ID: ${chainId}`);
 
   // Special handling for Bitcoin, which has different endpoint/parameters
-  if (chainId === SUPPORTED_CHAINS.BITCOIN) {
-    const endpoint = `${goldrushChainName}/address/${walletAddress}/balances_v2/`;
-    const params = {
-      'quote-currency': 'USD',
-      'no-nft-fetch': 'true'
-    };
+  // if (chainId === SUPPORTED_CHAINS.BITCOIN) {
+  //   const endpoint = `${goldrushChainName}/address/${walletAddress}/balances_v2/`;
+  //   const params = {
+  //     'quote-currency': 'USD',
+  //     'no-nft-fetch': 'true'
+  //   };
     
-    const data = await fetchFromCovalent(endpoint, params);
-    return (data.data.items || []).map(item => ({
-      ...item,
-      chain_id: chainId,
-      chain_name: 'Bitcoin'
-    }));
-  }
+  //   const data = await fetchFromCovalent(endpoint, params);
+  //   return (data.data.items || []).map(item => ({
+  //     ...item,
+  //     chain_id: chainId,
+  //     chain_name: 'Bitcoin'
+  //   }));
+  // }
   
   // Standard handling for EVM chains
   const endpoint = `${goldrushChainName}/address/${walletAddress}/balances_v2/`;
@@ -130,49 +130,49 @@ export async function getTransactionHistory(chainId, walletAddress, { pageNumber
   if (!goldrushChainName) throw new Error(`Unsupported chain ID: ${chainId}`);
 
   // Special handling for Bitcoin
-  if (chainId === SUPPORTED_CHAINS.BITCOIN) {
-    const endpoint = `${goldrushChainName}/address/${walletAddress}/transactions_v2/`;
-    const params = {
-      'quote-currency': 'USD',
-      'page-size': pageSize,
-      'page-number': pageNumber,
-      'no-logs': 'false'
-    };
+  // if (chainId === SUPPORTED_CHAINS.BITCOIN) {
+  //   const endpoint = `${goldrushChainName}/address/${walletAddress}/transactions_v2/`;
+  //   const params = {
+  //     'quote-currency': 'USD',
+  //     'page-size': pageSize,
+  //     'page-number': pageNumber,
+  //     'no-logs': 'false'
+  //   };
     
-    const data = await fetchFromCovalent(endpoint, params);
+  //   const data = await fetchFromCovalent(endpoint, params);
     
-    // Transform Bitcoin transactions to match EVM format
-    return {
-      transactions: (data.data.items || []).map(tx => ({
-        ...tx,
-        chain_id: chainId,
-        chain_name: 'Bitcoin',
-        from_address: tx.from?.address || null,
-        to_address: tx.to?.address || null,
-        value: tx.value || '0',
-        value_quote: tx.value_quote || 0,
-        gas_quote: tx.gas_quote || 0,
-        gas_metadata: {
-          contract_decimals: 8  // BTC decimals
-        },
-        log_events: tx.transfers?.map(transfer => ({
-          decoded: {
-            name: 'Transfer',
-            params: [
-              { name: 'from', value: transfer.from?.address || '' },
-              { name: 'to', value: transfer.to?.address || '' },
-              { name: 'value', value: transfer.amount || '0' }
-            ]
-          },
-          sender_contract_ticker_symbol: 'BTC',
-          sender_logo_url: '/BTC.svg',
-          sender_contract_decimals: 8,
-          sender_address: null
-        })) || []
-      })),
-      pagination: data.data.pagination || { has_more: false }
-    };
-  }
+  //   // Transform Bitcoin transactions to match EVM format
+  //   return {
+  //     transactions: (data.data.items || []).map(tx => ({
+  //       ...tx,
+  //       chain_id: chainId,
+  //       chain_name: 'Bitcoin',
+  //       from_address: tx.from?.address || null,
+  //       to_address: tx.to?.address || null,
+  //       value: tx.value || '0',
+  //       value_quote: tx.value_quote || 0,
+  //       gas_quote: tx.gas_quote || 0,
+  //       gas_metadata: {
+  //         contract_decimals: 8  // BTC decimals
+  //       },
+  //       log_events: tx.transfers?.map(transfer => ({
+  //         decoded: {
+  //           name: 'Transfer',
+  //           params: [
+  //             { name: 'from', value: transfer.from?.address || '' },
+  //             { name: 'to', value: transfer.to?.address || '' },
+  //             { name: 'value', value: transfer.amount || '0' }
+  //           ]
+  //         },
+  //         sender_contract_ticker_symbol: 'BTC',
+  //         sender_logo_url: '/BTC.svg',
+  //         sender_contract_decimals: 8,
+  //         sender_address: null
+  //       })) || []
+  //     })),
+  //     pagination: data.data.pagination || { has_more: false }
+  //   };
+  // }
 
   // Standard handling for EVM chains
   const endpoint = `${goldrushChainName}/address/${walletAddress}/transactions_v3/`;
@@ -221,18 +221,18 @@ export async function getCrossChainTransactions(walletAddress) {
   return data.data;
 }
 
-export async function getHistoricalPortfolioValue(walletAddress, days = 30) {
-  if (!walletAddress) throw new Error('Wallet address is required for getHistoricalPortfolioValue.');
+// export async function getHistoricalPortfolioValue(walletAddress, days = 30) {
+//   if (!walletAddress) throw new Error('Wallet address is required for getHistoricalPortfolioValue.');
   
-  const endpoint = `address/${walletAddress}/portfolio_v2/`;
-  const params = {
-    'days': days,
-    'quote-currency': 'USD'
-  };
+//   const endpoint = `address/${walletAddress}/portfolio_v2/`;
+//   const params = {
+//     'days': days,
+//     'quote-currency': 'USD'
+//   };
   
-  const data = await fetchFromCovalent(endpoint, params);
-  return data.data;
-}
+//   const data = await fetchFromCovalent(endpoint, params);
+//   return data.data;
+// }
 
 export async function getERC20Transfers(chainId, walletAddress, tokenAddress) {
   if (!walletAddress) throw new Error('Wallet address is required for getERC20Transfers.');
@@ -332,7 +332,7 @@ export const getNativeTokenSymbolForChain = (chainId) => {
   if (chainId === SUPPORTED_CHAINS.POLYGON) return 'MATIC';
   if (chainId === SUPPORTED_CHAINS.ARBITRUM) return 'ETH';
   if (chainId === SUPPORTED_CHAINS.OPTIMISM) return 'ETH';
-  if (chainId === SUPPORTED_CHAINS.BITCOIN) return 'BTC';
+  // if (chainId === SUPPORTED_CHAINS.BITCOIN) return 'BTC';
   return 'NATIVE';
 };
 
@@ -537,29 +537,29 @@ export async function checkAirdropEligibility(walletAddress) {
   }
 }
 
-// Also add this function to get historical price points for charts
-export async function getHistoricalPricePoints(walletAddress, timeframe = '30d') {
-  if (!walletAddress) throw new Error('Wallet address is required for getHistoricalPricePoints');
+// // Also add this function to get historical price points for charts
+// export async function getHistoricalPricePoints(walletAddress, timeframe = '30d') {
+//   if (!walletAddress) throw new Error('Wallet address is required for getHistoricalPricePoints');
   
-  const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : timeframe === '90d' ? 90 : 365;
+//   const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : timeframe === '90d' ? 90 : 365;
   
-  try {
-    const portfolioData = await getHistoricalPortfolioValue(walletAddress, days);
+//   try {
+//     const portfolioData = await getHistoricalPortfolioValue(walletAddress, days);
     
-    if (!portfolioData?.items?.length) {
-      return [];
-    }
+//     if (!portfolioData?.items?.length) {
+//       return [];
+//     }
     
-    // Format data for visualization
-    return portfolioData.items.map(item => ({
-      date: new Date(item.timestamp).toISOString().split('T')[0],
-      value: item.portfolio_value || 0,
-    }));
-  } catch (error) {
-    console.error('Failed to fetch historical portfolio data:', error);
-    return [];
-  }
-}
+//     // Format data for visualization
+//     return portfolioData.items.map(item => ({
+//       date: new Date(item.timestamp).toISOString().split('T')[0],
+//       value: item.portfolio_value || 0,
+//     }));
+//   } catch (error) {
+//     console.error('Failed to fetch historical portfolio data:', error);
+//     return [];
+//   }
+// }
 
 // Enhanced transaction filtering functionality
 export async function getFilteredMultiChainTransactions(walletAddress, filters = {}) {
@@ -662,7 +662,7 @@ export const getChainLogo = (chainId) => {
     case SUPPORTED_CHAINS.POLYGON: return '/POLYGON.svg';
     case SUPPORTED_CHAINS.ARBITRUM: return '/ARB.svg';
     case SUPPORTED_CHAINS.OPTIMISM: return '/OP.svg';
-    case SUPPORTED_CHAINS.BITCOIN: return '/BTC.svg';
+    // case SUPPORTED_CHAINS.BITCOIN: return '/BTC.svg';
     default: return null;
   }
 };
