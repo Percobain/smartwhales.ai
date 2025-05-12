@@ -13,6 +13,7 @@ export const Dashboard = ({
   connectedWalletAddress, 
   referralLink, 
   referredUsersCount, 
+  trackedWalletsCount, // Add this prop
   currentConnectedChainId, 
   setErrorApp 
 }) => {
@@ -77,11 +78,11 @@ export const Dashboard = ({
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6 bg-black text-white">
-      {/* Top Section with Portfolio Overview */}
-      <div className="grid grid-cols-1 gap-6">
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
         <PortfolioOverview
           walletAddress={walletAddress}
+          connectedWalletAddress={connectedWalletAddress}
           selectedChains={selectedChains}
           referralLink={referralLink}
           referredUsersCount={referredUsersCount}

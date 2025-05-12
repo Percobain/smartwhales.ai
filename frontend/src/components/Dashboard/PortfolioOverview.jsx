@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getTokenBalances } from '../../services/api'; // Removed getHistoricalPricePoints
+import { getTokenBalances, getTrackingStats } from '../../services/api';
 import { FaWallet, FaCopy, FaCheckCircle, FaSpinner } from 'react-icons/fa';
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"; // Removed CardDescription as it wasn't used
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge"; // Badge is no longer used
-import { Avatar } from "@/components/ui/avatar";
+// import { Avatar } from "@/components/ui/avatar";
 import { AlertCircle } from "lucide-react";
 import TokenDisplay from './TokenDisplay';
 
@@ -18,6 +17,7 @@ const PortfolioOverview = ({
   isAirdropEligible,
   eligibilityReasons = [],
   setErrorApp,
+  connectedWalletAddress
 }) => {
   const [portfolioData, setPortfolioData] = useState({
     totalValue: 0,
@@ -28,6 +28,7 @@ const PortfolioOverview = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [copiedReferral, setCopiedReferral] = useState(false);
+  const [trackedWallets, setTrackedWallets] = useState(0); // Added state for tracked wallets
 
   const shortWalletAddress = walletAddress
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
@@ -96,6 +97,22 @@ const PortfolioOverview = ({
     fetchData();
   }, [walletAddress, selectedChains, resetLocalErrors, setErrorApp]);
 
+ useEffect(() => {
+   if (!connectedWalletAddress) {
+     setTrackedWallets(0);
+     return;
+   }
+   getTrackingStats(connectedWalletAddress)
+     .then(res => {
+       if (res.success && typeof res.data.uniqueWalletsTracked === 'number') {
+         setTrackedWallets(res.data.uniqueWalletsTracked);
+       }
+     })
+     .catch(err => {
+       console.error('Error fetching tracked wallets count:', err);
+     });
+}, [connectedWalletAddress]);
+
   const handleCopyReferral = () => {
     if (!referralLink) return;
     navigator.clipboard.writeText(referralLink)
@@ -116,21 +133,26 @@ const PortfolioOverview = ({
         </Alert>
       )}
 
-      <Card className="bg-black border border-gray-800">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl text-white flex items-center gap-2">
-                <Avatar className="h-10 w-10 rounded bg-[#8A2BE2]/20 border border-[#8A2BE2]/30">
-                  <FaWallet className="text-[#8A2BE2]" />
-                </Avatar>
-                <span>{shortWalletAddress}</span>
-              </CardTitle>
+      <Card className="bg-black border border-gray-800 shadow-xl">
+        <CardHeader className="border-b border-gray-800 p-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <FaWallet className="text-3xl text-[#8A2BE2]" />
+              <div>
+                <CardTitle className="text-2xl font-bold text-white">
+                  {shortWalletAddress}
+                </CardTitle>
+                {walletAddress && (
+                  <div className="text-xs text-gray-400">
+                    {walletAddress}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex gap-3">
               <div className="text-center px-4 py-2 bg-zinc-900 rounded-lg">
                 <div className="text-xs text-gray-400 mb-1">Tracked Wallets</div>
-                <div className="text-xl font-bold text-white">66</div>
+                <div className="text-xl font-bold text-white">{trackedWallets}</div>
               </div>
               <div className="text-center px-4 py-2 bg-zinc-900 rounded-lg">
                 <div className="text-xs text-gray-400 mb-1">Referred Users</div>
@@ -154,7 +176,6 @@ const PortfolioOverview = ({
                       })}`
                     )}
                   </div>
-                  {/* Removed Badge for percentChange and valueChange */}
                 </div>
                 <div className="text-gray-400 text-sm mt-1">Total Portfolio Value</div>
               </div>

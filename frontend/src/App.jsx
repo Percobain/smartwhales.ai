@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './App.css'; // Your global styles
 import { Navbar } from './components/Navbar';
+import { ethers } from 'ethers';
 import { Hero } from './components/Hero';
 import { Dashboard } from './components/Dashboard/Dashboard';
 import { Footer } from './components/Footer';
 import { Toaster } from "@/components/ui/sonner";
 import { getReferrerFromUrl, logReferralConnection, generateReferralLink, getReferredUsersCount, trackWalletClick } from './services/api';
+const BACKEND_API_BASE_URL = 'http://localhost:5000';
 
 function App() {
   const [connectedWallet, setConnectedWallet] = useState(null);
@@ -91,22 +93,47 @@ function App() {
     }
   }, [connectedWallet]);
 
-  const handleTrackAddress = async (address) => {
+  const handleTrackAddress = async (addressToTrack) => {
     setError('');
-    if (address && address.trim() !== "") {
-        // Basic address validation (Ethereum addresses are 42 chars long, starting with 0x)
-        const isValidEthAddress = /^0x[a-fA-F0-9]{40}$/.test(address.trim());
-        const isValidENS = /^([a-zA-Z0-9]+([-._][a-zA-Z0-9]+)*\.)+eth$/.test(address.trim());
-        
-        if (!isValidEthAddress && !isValidENS) {
-            setError("Invalid address format. Please enter a valid wallet address.");
-            return;
-        }
-        
-        setTrackedAddress(address.trim());
-        await trackWalletClick(address.trim(), connectedWallet);
-    } else {
-        setError("Please enter a valid wallet address to track.");
+    const trimmed = addressToTrack.trim();
+    if (!connectedWallet) {
+      setError('Please connect your wallet first.');
+      return;
+    }
+    if (!/^0x[a-fA-F0-9]{40}$/.test(trimmed) && !/^([a-zA-Z0-9]+([-._][a-zA-Z0-9]+)*\.)+eth$/.test(trimmed)) {
+      setError('Invalid address format. Please enter a valid wallet address.');
+      return;
+    }
+
+    try {
+      // Locally generate the exact same format your backend expects
+      const messageToSign =
+        `I am signing this message to authenticate with SmartWhales.ai as ${connectedWallet}. Timestamp: ${Date.now()}`;
+
+      // Sign via MetaMask RPC directly
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [messageToSign, connectedWallet]
+      });
+
+      // Call tracking endpoint
+      const result = await trackWalletClick(
+        trimmed,
+        connectedWallet,
+        signature,
+        messageToSign,
+        currentChainId
+      );
+
+      if (result.success) {
+        setTrackedAddress(trimmed);
+        // Optionally refresh stats…
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (err) {
+      console.error('trackWalletClick error:', err);
+      setError(err.message || 'Failed to track address.');
     }
   };
   
