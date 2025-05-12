@@ -336,7 +336,7 @@ const TradesList = ({
                                   <div className="text-gray-500 text-xs">?</div>
                                 )}
                               </Avatar>
-                              <div>Unknown input</div>
+                              <div>ETH</div>
                             </div>
                           )}
                         </div>

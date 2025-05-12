@@ -30,10 +30,30 @@ function App() {
 
           const referrer = getReferrerFromUrl();
           if (referrer && referrer.toLowerCase() !== account.toLowerCase()) {
-            await logReferralConnection(referrer, account);
-            // Update referred users count for the referrer if they are the current user
-            if (referrer.toLowerCase() === connectedWallet?.toLowerCase()) {
-                 setReferredUsers(getReferredUsersCount(referrer));
+            try {
+              // 1) Build the exact message your backend expects
+              const messageToSign = 
+                `I am signing this message to authenticate with SmartWhales.ai as ${account}. Timestamp: ${Date.now()}`;
+              // 2) Ask MetaMask to sign it
+              const signature = await window.ethereum.request({
+                method: 'personal_sign',
+                params: [messageToSign, account]
+              });
+              // 3) Send the signed payload
+              const referralRes = await logReferralConnection(
+                referrer,
+                account,
+                signature,
+                messageToSign
+              );
+              if (!referralRes.success) {
+                console.error('Referral log failed:', referralRes.message);
+              }
+              // 4) Fetch and update the new referred‐users count
+              const count = await getReferredUsersCount(referrer);
+              setReferredUsers(count);
+            } catch (err) {
+              console.error('Error logging referral connection:', err);
             }
           }
         }
@@ -144,7 +164,7 @@ function App() {
       <Navbar connectedWallet={connectedWallet} onConnectWallet={handleConnectWallet} />
       {/* Add a white line between Navbar and Hero */}
       <div className="border-t border-white/20"></div>
-      <main>
+      <main className='bg-black'>
         {error && <div className="bg-red-800/70 text-white p-3 rounded-md text-center mb-4 mx-auto max-w-2xl">{error}</div>}
         <Hero onTrackWallet={handleTrackAddress} />
         {displayAddress && (
