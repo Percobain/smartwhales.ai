@@ -43,7 +43,7 @@ export const getChainExplorer = (chainId) => {
     case SUPPORTED_CHAINS.POLYGON: return 'https://polygonscan.com';
     case SUPPORTED_CHAINS.ARBITRUM: return 'https://arbiscan.io';
     case SUPPORTED_CHAINS.OPTIMISM: return 'https://optimistic.etherscan.io';
-    default: return 'https://etherscan.io';
+    default: return 'https://blockscan.com/';
   }
 };
 
@@ -270,3 +270,107 @@ export const getNativeTokenSymbolForChain = (chainId) => {
   if (chainId === SUPPORTED_CHAINS.OPTIMISM) return 'ETH';
   return 'NATIVE';
 };
+
+export async function calculatePortfolioPnL(chainId, walletAddress, timeframe = '30d') {
+  if (!walletAddress) throw new Error('Wallet address is required for PnL calculation.');
+  if (!chainId) throw new Error('Chain ID is required for PnL calculation.');
+
+  const goldrushChainName = chainIdToGoldRushChainName(chainId);
+  if (!goldrushChainName) throw new Error(`Unsupported chain ID: ${chainId}`);
+
+  // Get current balances for the end value
+  const currentBalances = await getTokenBalances(chainId, walletAddress);
+  
+  // Calculate current portfolio total value
+  const currentPortfolioValue = currentBalances.reduce((total, token) => {
+    return total + (token.quote || 0);
+  }, 0);
+
+  // Get historical data based on timeframe
+  const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : timeframe === '90d' ? 90 : 365;
+  
+  // Start date for comparison (days ago)
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  // Historical token balances require token addresses, so we'll loop through major tokens
+  const significantTokens = currentBalances
+    .filter(token => token.quote > 50) // Only tokens with value over $50
+    .slice(0, 10); // Limit to top 10 tokens by value
+  
+  let historicalPortfolioValue = 0;
+  
+  // For each significant token, get its historical balance
+  for (const token of significantTokens) {
+    try {
+      // Get historical data for this token
+      const endpoint = `${goldrushChainName}/address/${walletAddress}/historical_balances/`;
+      const params = {
+        'contract-address': token.contract_address,
+        'from-timestamp': startDate.toISOString(),
+        'quote-currency': 'USD'
+      };
+      
+      const historicalData = await fetchFromCovalent(endpoint, params);
+      
+      // If we have historical data for this token
+      if (historicalData?.data?.items?.length > 0) {
+        // Get the oldest record within our timeframe
+        const oldestRecord = historicalData.data.items[0];
+        historicalPortfolioValue += oldestRecord.quote || 0;
+      }
+    } catch (error) {
+      console.warn(`Failed to get historical data for token ${token.contract_ticker_symbol}:`, error);
+    }
+  }
+  
+  // Calculate PnL metrics
+  const absolutePnL = currentPortfolioValue - historicalPortfolioValue;
+  const percentagePnL = historicalPortfolioValue > 0 
+    ? (absolutePnL / historicalPortfolioValue) * 100 
+    : 0;
+    
+  return {
+    startValue: historicalPortfolioValue,
+    currentValue: currentPortfolioValue,
+    absolutePnL,
+    percentagePnL,
+    timeframe
+  };
+}
+
+// For multi-chain PnL calculation
+export async function calculateMultiChainPortfolioPnL(walletAddress, timeframe = '30d') {
+  if (!walletAddress) throw new Error('Wallet address is required for multi-chain PnL calculation.');
+  
+  // Calculate PnL across all supported chains
+  const results = {};
+  let totalStartValue = 0;
+  let totalCurrentValue = 0;
+  
+  for (const chainId of Object.values(SUPPORTED_CHAINS)) {
+    try {
+      const pnl = await calculatePortfolioPnL(chainId, walletAddress, timeframe);
+      results[chainId] = pnl;
+      
+      totalStartValue += pnl.startValue;
+      totalCurrentValue += pnl.currentValue;
+    } catch (error) {
+      console.warn(`Failed to calculate PnL for chain ${getChainNameFromId(chainId)}:`, error);
+    }
+  }
+  
+  const totalAbsolutePnL = totalCurrentValue - totalStartValue;
+  const totalPercentagePnL = totalStartValue > 0 
+    ? (totalAbsolutePnL / totalStartValue) * 100 
+    : 0;
+    
+  return {
+    chainResults: results,
+    totalStartValue,
+    totalCurrentValue,
+    totalAbsolutePnL,
+    totalPercentagePnL,
+    timeframe
+  };
+}
