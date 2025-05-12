@@ -1,52 +1,52 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const Pagination = ({ currentPage, totalPages, onPageChange, className }) => {
-  // Generate page numbers to show
+  // Generate page numbers array with ellipsis handling
   const getPageNumbers = () => {
-    const pageNumbers = [];
+    const pages = [];
     
-    // Always show first page
-    pageNumbers.push(1);
-    
-    // Calculate range around current page
-    let startPage = Math.max(2, currentPage - 1);
-    let endPage = Math.min(totalPages - 1, currentPage + 1);
-    
-    // Add ellipsis before range if needed
-    if (startPage > 2) {
-      pageNumbers.push('...');
+    // Always show first and last pages
+    // Show ellipsis (...) for large ranges
+    if (totalPages <= 7) {
+      // Less than 7 pages, show all
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // More than 7 pages, show with ellipsis
+      pages.push(1); // Always show first page
+      
+      if (currentPage <= 3) {
+        // Near start: 1 2 3 4 5 ... n
+        pages.push(2, 3, 4, 5, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        // Near end: 1 ... n-4 n-3 n-2 n-1 n
+        pages.push('...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        // Middle: 1 ... c-1 c c+1 ... n
+        pages.push('...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
     }
     
-    // Add range pages
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
-    }
-    
-    // Add ellipsis after range if needed
-    if (endPage < totalPages - 1) {
-      pageNumbers.push('...');
-    }
-    
-    // Always show last page if more than one page
-    if (totalPages > 1) {
-      pageNumbers.push(totalPages);
-    }
-    
-    return pageNumbers;
+    return pages;
   };
-
+  
   return (
-    <div className={cn('flex justify-center items-center space-x-2', className)}>
+    <div className={cn("flex justify-center items-center gap-2", className)}>
       {/* Previous button */}
       <Button
         variant="outline"
         size="icon"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="cursor-pointer bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
+        className={cn(
+          "h-9 w-9 rounded-full bg-black border border-gray-800 text-white",
+          "hover:bg-zinc-800 hover:border-gray-700",
+          "disabled:opacity-50 disabled:pointer-events-none"
+        )}
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -54,16 +54,16 @@ const Pagination = ({ currentPage, totalPages, onPageChange, className }) => {
       {/* Page numbers */}
       {getPageNumbers().map((page, index) => (
         page === '...' ? (
-          <span key={`ellipsis-${index}`} className="text-gray-400">...</span>
+          <span key={`ellipsis-${index}`} className="px-2 text-gray-500">...</span>
         ) : (
           <Button
             key={`page-${page}`}
             variant={currentPage === page ? 'default' : 'outline'}
             className={cn(
-              'cursor-pointer',
+              "h-9 w-9 rounded-full font-medium",
               currentPage === page 
-                ? 'bg-[#8A2BE2] hover:bg-purple-700 text-white' 
-                : 'bg-gray-800 hover:bg-gray-700 text-white border-gray-700'
+                ? "bg-[#8A2BE2] hover:bg-purple-700 text-white border-none" 
+                : "bg-black border border-gray-800 text-white hover:bg-zinc-800 hover:border-gray-700"
             )}
             onClick={() => onPageChange(page)}
             size="sm"
@@ -79,7 +79,11 @@ const Pagination = ({ currentPage, totalPages, onPageChange, className }) => {
         size="icon"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="cursor-pointer bg-gray-800 hover:bg-gray-700 text-white border-gray-700"
+        className={cn(
+          "h-9 w-9 rounded-full bg-black border border-gray-800 text-white",
+          "hover:bg-zinc-800 hover:border-gray-700",
+          "disabled:opacity-50 disabled:pointer-events-none"
+        )}
       >
         <ChevronRight className="h-4 w-4" />
       </Button>

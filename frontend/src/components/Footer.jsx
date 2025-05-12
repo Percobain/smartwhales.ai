@@ -12,8 +12,8 @@ export const Footer = () => {
     return (
         <footer className="bg-black text-white py-6 sm:py-8 px-4 sm:px-8 mt-auto">
             <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
-                <div className="text-xl font-bold mb-4 md:mb-0 cursor-pointer" onClick={() => window.location.href='/'}>
-                    smartwhales<span className="text-[#8A2BE2]">.ai</span>
+                <div className="cursor-pointer mb-4 md:mb-0" onClick={() => window.location.href='/'}>
+                    <img src="/Logo.svg" alt="smartwhales.ai logo" className="h-8" />
                 </div>
                 <div className="flex space-x-4 sm:space-x-5">
                     {socialLinks.map(link => (

@@ -1,19 +1,20 @@
 import React from 'react';
 import { SUPPORTED_CHAINS, getChainNameFromId } from '../../services/api';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-// FilterButton component using shadcn Button
+// FilterButton component with purple accent from Hero.jsx
 const FilterButton = ({ label, onClick, isActive, className = '' }) => (
   <Button
     variant={isActive ? "default" : "secondary"}
-    size="sm"
     onClick={onClick}
     className={cn(
-      "text-xs sm:text-sm whitespace-nowrap cursor-pointer",
-      isActive ? "bg-[#8A2BE2] hover:bg-purple-700" : "bg-gray-700 hover:bg-gray-600 text-gray-300",
+      "text-xs px-3 py-1 h-8 rounded-full transition-all",
+      isActive 
+        ? "bg-[#8A2BE2] hover:bg-purple-700 text-white shadow-md shadow-purple-900/20" 
+        : "bg-black border border-gray-800 hover:bg-gray-900 hover:border-gray-700 text-gray-400",
       className
     )}
   >
@@ -32,15 +33,15 @@ const FilterPanel = ({
   handleItemsPerPageChange
 }) => {
   return (
-    <Card className="bg-gray-800 border-gray-700">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm text-gray-400 uppercase tracking-wider">Filters</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <Card className="bg-black border border-gray-800 shadow-lg">
+      <CardContent className="p-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Chain Filter */}
-          <div>
-            <div className="text-xs font-medium text-gray-400 mb-2">Chains</div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-[#8A2BE2] rounded-full"></div>
+              <h3 className="text-xs font-medium text-white uppercase tracking-wider">Chains</h3>
+            </div>
             <div className="flex flex-wrap gap-2">
               {Object.entries(SUPPORTED_CHAINS).map(([name, id]) => (
                 <FilterButton 
@@ -54,14 +55,17 @@ const FilterPanel = ({
           </div>
           
           {/* Time Filter */}
-          <div>
-            <div className="text-xs font-medium text-gray-400 mb-2">Time Period</div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-[#8A2BE2] rounded-full"></div>
+              <h3 className="text-xs font-medium text-white uppercase tracking-wider">Time Period</h3>
+            </div>
             <div className="flex flex-wrap gap-2">
               {[
                 {p: 'all', l: 'All Time'}, 
-                {p: '24h', l: '24 Hours'}, 
-                {p: '7d', l: '7 Days'}, 
-                {p: '30d', l: '30 Days'}
+                {p: '24h', l: '24h'}, 
+                {p: '7d', l: '7d'}, 
+                {p: '30d', l: '30d'}
               ].map(tf => (
                 <FilterButton 
                   key={tf.p} 
@@ -74,14 +78,17 @@ const FilterPanel = ({
           </div>
           
           {/* Type Filter */}
-          <div>
-            <div className="text-xs font-medium text-gray-400 mb-2">Transaction Type</div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-[#8A2BE2] rounded-full"></div>
+              <h3 className="text-xs font-medium text-white uppercase tracking-wider">Transaction Type</h3>
+            </div>
             <div className="flex flex-wrap gap-2">
               {[
-                {t: 'all', l: 'All Types'}, 
+                {t: 'all', l: 'All'}, 
                 {t: 'receive', l: 'Received'}, 
                 {t: 'send', l: 'Sent'}, 
-                {t: 'trade', l: 'Swaps/Trades'}
+                {t: 'trade', l: 'Trades'}
               ].map(ttf => (
                 <FilterButton 
                   key={ttf.t} 
@@ -95,22 +102,24 @@ const FilterPanel = ({
         </div>
         
         {/* Items per page selector */}
-        <div className="flex items-center justify-end space-x-2">
-          <span className="text-xs text-gray-400">Items per page:</span>
-          <Select
-            value={itemsPerPage.toString()}
-            onValueChange={handleItemsPerPageChange}
-          >
-            <SelectTrigger className="w-20 bg-gray-700 border-gray-600 text-white">
-              <SelectValue placeholder="5" />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-700 text-white">
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-center justify-end mt-5 border-t border-gray-800 pt-4">
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400">Items per page</span>
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={handleItemsPerPageChange}
+            >
+              <SelectTrigger className="w-16 h-8 bg-black border border-gray-800 text-white text-xs rounded-md focus:ring-[#8A2BE2] focus:ring-offset-black">
+                <SelectValue placeholder="5" />
+              </SelectTrigger>
+              <SelectContent className="bg-black border border-gray-800 text-white">
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { SUPPORTED_CHAINS, checkAirdropEligibility } from '../../services/api';
 import PortfolioOverview from './PortfolioOverview';
-import PnLDisplay from './PnLDisplay'; // Import the new component
-import TransactionsPanel from './TransactionsPanel';
-import TradesPanel from './TradesPanel';
+import TransactionsList from './TransactionsList'; // We'll create this new component
+import TradesList from './TradesList'; // We'll create this new component
 import FilterPanel from './FilterPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const Dashboard = ({ 
   walletAddress, 
@@ -16,15 +16,15 @@ export const Dashboard = ({
   setErrorApp 
 }) => {
   const [selectedChains, setSelectedChains] = useState([SUPPORTED_CHAINS.ETHEREUM, SUPPORTED_CHAINS.BSC]);
-  const [timeFilter, setTimeFilter] = useState('all'); // '24h', '7d', '30d', 'all'
-  const [txTypeFilter, setTxTypeFilter] = useState('all'); // 'all', 'send', 'receive', 'trade'
+  const [timeFilter, setTimeFilter] = useState('all');
+  const [txTypeFilter, setTxTypeFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('transactions');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [isAirdropEligible, setIsAirdropEligible] = useState(false);
   const [eligibilityReasons, setEligibilityReasons] = useState([]);
 
-  // Check airdrop eligibility
+  // Existing code for airdrop eligibility check
   useEffect(() => {
     const checkEligibility = async () => {
       if (walletAddress) {
@@ -41,16 +41,14 @@ export const Dashboard = ({
     checkEligibility();
   }, [walletAddress]);
 
-  // Toggle chain filter
+  // Existing filter functions
   const toggleChainFilter = (chainId) => {
     setSelectedChains(prev =>
       prev.includes(chainId) ? prev.filter(c => c !== chainId) : [...prev, chainId]
     );
-    // Reset to first page when changing filters
     setCurrentPage(1);
   };
 
-  // Update filters
   const updateTimeFilter = (value) => {
     setTimeFilter(value);
     setCurrentPage(1);
@@ -61,88 +59,93 @@ export const Dashboard = ({
     setCurrentPage(1);
   };
 
-  // Handle page change
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
   };
 
-  // Handle items per page change
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(parseInt(value));
     setCurrentPage(1);
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <PortfolioOverview
-        walletAddress={walletAddress}
-        selectedChains={selectedChains}
-        referralLink={referralLink}
-        referredUsersCount={referredUsersCount}
-        isAirdropEligible={isAirdropEligible}
-        eligibilityReasons={eligibilityReasons}
-        setErrorApp={setErrorApp}
-      />
-      
-      {/* Add PnL Display Component */}
-      <PnLDisplay 
-        walletAddress={walletAddress}
-        selectedChains={selectedChains}
-        setErrorApp={setErrorApp}
-      />
-      
-      <FilterPanel
-        selectedChains={selectedChains}
-        timeFilter={timeFilter}
-        txTypeFilter={txTypeFilter}
-        toggleChainFilter={toggleChainFilter}
-        updateTimeFilter={updateTimeFilter}
-        updateTxTypeFilter={updateTxTypeFilter}
-        itemsPerPage={itemsPerPage}
-        handleItemsPerPageChange={handleItemsPerPageChange}
-      />
-      
-      <Tabs defaultValue="transactions" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 mb-4">
-          <TabsTrigger 
-            value="transactions" 
-            className="data-[state=active]:bg-[#8A2BE2] cursor-pointer"
-          >
-            Transactions
-          </TabsTrigger>
-          <TabsTrigger 
-            value="trades" 
-            className="data-[state=active]:bg-[#8A2BE2] cursor-pointer"
-          >
-            Trades
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="transactions" className="mt-0">
-          <TransactionsPanel
-            walletAddress={walletAddress}
+    <div className="container mx-auto p-4 space-y-6 bg-black text-white">
+      {/* Top Section with Portfolio Overview */}
+      <div className="grid grid-cols-1 gap-6">
+        <PortfolioOverview
+          walletAddress={walletAddress}
+          selectedChains={selectedChains}
+          referralLink={referralLink}
+          referredUsersCount={referredUsersCount}
+          isAirdropEligible={isAirdropEligible}
+          eligibilityReasons={eligibilityReasons}
+          setErrorApp={setErrorApp}
+        />
+      </div>
+
+      {/* Activity Section with Filters and Tabs */}
+      <Card className="bg-black border border-gray-800">
+        <CardContent className="p-6">
+          {/* Filter Bar */}
+          <FilterPanel
             selectedChains={selectedChains}
             timeFilter={timeFilter}
             txTypeFilter={txTypeFilter}
-            currentPage={currentPage}
+            toggleChainFilter={toggleChainFilter}
+            updateTimeFilter={updateTimeFilter}
+            updateTxTypeFilter={updateTxTypeFilter}
             itemsPerPage={itemsPerPage}
-            handlePageChange={handlePageChange}
-            setErrorApp={setErrorApp}
+            handleItemsPerPageChange={handleItemsPerPageChange}
           />
-        </TabsContent>
-        
-        <TabsContent value="trades" className="mt-0">
-          <TradesPanel
-            walletAddress={walletAddress}
-            selectedChains={selectedChains}
-            timeFilter={timeFilter}
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            handlePageChange={handlePageChange}
-            setErrorApp={setErrorApp}
-          />
-        </TabsContent>
-      </Tabs>
+          
+          {/* Tabs for Transactions/Trades */}
+          <Tabs defaultValue="transactions" value={activeTab} onValueChange={setActiveTab} className="w-full mt-6">
+            <TabsList className="grid grid-cols-2 mb-6 bg-zinc-900 p-1 rounded-full overflow-hidden">
+              <TabsTrigger 
+                value="transactions" 
+                className="rounded-full px-6 py-3 text-sm font-medium transition-all"
+              >
+                <span className={activeTab === "transactions" ? "bg-gradient-to-b from-white to-white/80 bg-clip-text text-transparent" : "text-gray-400"}>
+                  Receive or Send
+                </span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="trades" 
+                className="rounded-full px-6 py-3 text-sm font-medium transition-all"
+              >
+                <span className={activeTab === "trades" ? "bg-gradient-to-b from-white to-white/80 bg-clip-text text-transparent" : "text-gray-400"}>
+                  Traded
+                </span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="transactions" className="mt-0">
+              <TransactionsList
+                walletAddress={walletAddress}
+                selectedChains={selectedChains}
+                timeFilter={timeFilter}
+                txTypeFilter={txTypeFilter}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                handlePageChange={handlePageChange}
+                setErrorApp={setErrorApp}
+              />
+            </TabsContent>
+            
+            <TabsContent value="trades" className="mt-0">
+              <TradesList
+                walletAddress={walletAddress}
+                selectedChains={selectedChains}
+                timeFilter={timeFilter}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                handlePageChange={handlePageChange}
+                setErrorApp={setErrorApp}
+              />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

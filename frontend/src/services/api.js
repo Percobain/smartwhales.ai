@@ -374,3 +374,229 @@ export async function calculateMultiChainPortfolioPnL(walletAddress, timeframe =
     timeframe
   };
 }
+
+
+// Add this after the calculateMultiChainPortfolioPnL function
+
+export async function checkAirdropEligibility(walletAddress) {
+  if (!walletAddress) throw new Error('Wallet address is required for checkAirdropEligibility');
+  
+  try {
+    // Get balances across all chains
+    let totalValue = 0;
+    let interactedWithQualifyingProtocols = false;
+    let holdsDiverseAssets = false;
+    let hasRecentActivity = false;
+    
+    // Check each supported chain
+    for (const chainId of Object.values(SUPPORTED_CHAINS)) {
+      try {
+        // Check token balances
+        const balances = await getTokenBalances(chainId, walletAddress);
+        
+        // Calculate total portfolio value
+        totalValue += balances.reduce((sum, token) => sum + (token.quote || 0), 0);
+        
+        // Check if wallet holds a diverse set of assets (at least 3 different tokens)
+        if (balances.length >= 3) {
+          holdsDiverseAssets = true;
+        }
+        
+        // Check for recent activity (transactions in the last 30 days)
+        const txHistory = await getTransactionHistory(chainId, walletAddress, { pageSize: 10 });
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+        
+        const hasRecentTx = txHistory.transactions.some(tx => 
+          new Date(tx.block_signed_at) >= thirtyDaysAgo
+        );
+        
+        if (hasRecentTx) {
+          hasRecentActivity = true;
+        }
+        
+        // Check for interactions with specific protocols that qualify for airdrops
+        // These would be real protocol addresses in a production app
+        const qualifyingProtocols = [
+          // '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', // Uniswap example
+          // '0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9', // Aave example
+          // Add more qualifying protocol addresses
+        ];
+        
+        // Check if any transactions interact with qualifying protocols
+        const hasQualifyingInteractions = txHistory.transactions.some(tx => 
+          qualifyingProtocols.some(address => 
+            tx.to_address?.toLowerCase() === address.toLowerCase() ||
+            tx.log_events?.some(log => log.sender_address?.toLowerCase() === address.toLowerCase())
+          )
+        );
+        
+        if (hasQualifyingInteractions) {
+          interactedWithQualifyingProtocols = true;
+        }
+      } catch (error) {
+        console.error(`Failed to check airdrop eligibility on chain ${chainId}:`, error);
+      }
+    }
+    
+    // Determine eligibility based on criteria
+    // In a real app, these would be specific criteria defined by the airdrop
+    const valueThreshold = 500; // $500 minimum portfolio value
+    const isEligible = 
+      totalValue >= valueThreshold || 
+      (holdsDiverseAssets && hasRecentActivity) || 
+      interactedWithQualifyingProtocols;
+    
+    // Construct reasons for eligibility
+    const reasons = [];
+    if (totalValue >= valueThreshold) {
+      reasons.push(`Portfolio value above $${valueThreshold}`);
+    }
+    if (holdsDiverseAssets) {
+      reasons.push("Holds diverse assets");
+    }
+    if (hasRecentActivity) {
+      reasons.push("Active in the last 30 days");
+    }
+    if (interactedWithQualifyingProtocols) {
+      reasons.push("Used qualifying protocols");
+    }
+    
+    return {
+      eligible: isEligible,
+      reasons: isEligible ? reasons : []
+    };
+  } catch (error) {
+    console.error("Error checking airdrop eligibility:", error);
+    return { eligible: false, reasons: [] };
+  }
+}
+
+// Also add this function to get historical price points for charts
+export async function getHistoricalPricePoints(walletAddress, timeframe = '30d') {
+  if (!walletAddress) throw new Error('Wallet address is required for getHistoricalPricePoints');
+  
+  const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : timeframe === '90d' ? 90 : 365;
+  
+  try {
+    const portfolioData = await getHistoricalPortfolioValue(walletAddress, days);
+    
+    if (!portfolioData?.items?.length) {
+      return [];
+    }
+    
+    // Format data for visualization
+    return portfolioData.items.map(item => ({
+      date: new Date(item.timestamp).toISOString().split('T')[0],
+      value: item.portfolio_value || 0,
+    }));
+  } catch (error) {
+    console.error('Failed to fetch historical portfolio data:', error);
+    return [];
+  }
+}
+
+// Enhanced transaction filtering functionality
+export async function getFilteredMultiChainTransactions(walletAddress, filters = {}) {
+  if (!walletAddress) throw new Error('Wallet address is required for getFilteredMultiChainTransactions');
+  
+  const { 
+    chains = Object.values(SUPPORTED_CHAINS),
+    timeRange = null, // {startDate, endDate} or null for all time
+    txTypes = [], // 'send', 'receive', 'swap', 'approval', etc.
+    pageNumber = 0,
+    pageSize = 20
+  } = filters;
+  
+  let allTransactions = [];
+  let hasMoreItems = false;
+  
+  // Fetch transactions from all selected chains
+  for (const chainId of chains) {
+    try {
+      const { transactions, pagination } = await getTransactionHistory(
+        chainId, 
+        walletAddress, 
+        { pageNumber, pageSize }
+      );
+      
+      if (pagination?.has_more) {
+        hasMoreItems = true;
+      }
+      
+      allTransactions = [...allTransactions, ...transactions];
+    } catch (error) {
+      console.error(`Error fetching transactions for chain ${chainId}:`, error);
+    }
+  }
+
+  // Apply time filter if specified
+  if (timeRange && (timeRange.startDate || timeRange.endDate)) {
+    allTransactions = allTransactions.filter(tx => {
+      const txDate = new Date(tx.block_signed_at);
+      let passesFilter = true;
+      
+      if (timeRange.startDate) {
+        passesFilter = passesFilter && txDate >= new Date(timeRange.startDate);
+      }
+      
+      if (timeRange.endDate) {
+        passesFilter = passesFilter && txDate <= new Date(timeRange.endDate);
+      }
+      
+      return passesFilter;
+    });
+  }
+  
+  // Apply transaction type filter if specified
+  if (txTypes && txTypes.length > 0) {
+    allTransactions = allTransactions.filter(tx => {
+      const from = tx.from_address?.toLowerCase();
+      const to = tx.to_address?.toLowerCase();
+      const wallet = walletAddress?.toLowerCase();
+      
+      // Determine transaction type
+      let txType = '';
+      
+      if (from === wallet && to !== wallet) {
+        txType = 'send';
+      } else if (to === wallet && from !== wallet) {
+        txType = 'receive';
+      } else if (tx.log_events?.some(log => 
+        log.decoded?.name?.toLowerCase().includes('swap') || 
+        (log.decoded?.name === 'Transfer' && 
+         log.decoded.params.find(p => p.name === 'from')?.value?.toLowerCase() === wallet &&
+         log.decoded.params.find(p => p.name === 'to')?.value?.toLowerCase() === wallet)
+      )) {
+        txType = 'swap';
+      } else if (tx.log_events?.some(log => log.decoded?.name === 'Approval')) {
+        txType = 'approval';
+      } else {
+        txType = 'other';
+      }
+      
+      return txTypes.includes(txType);
+    });
+  }
+  
+  // Sort transactions by date (newest first)
+  allTransactions.sort((a, b) => 
+    new Date(b.block_signed_at) - new Date(a.block_signed_at)
+  );
+  
+  return {
+    transactions: allTransactions,
+    hasMore: hasMoreItems
+  };
+}
+
+export const getChainLogo = (chainId) => {
+  switch (chainId) {
+    case SUPPORTED_CHAINS.ETHEREUM: return '/ETH.svg';
+    case SUPPORTED_CHAINS.BSC: return '/BNB.svg';
+    case SUPPORTED_CHAINS.POLYGON: return '/MATIC.svg';
+    case SUPPORTED_CHAINS.ARBITRUM: return '/ARB.svg';
+    case SUPPORTED_CHAINS.OPTIMISM: return '/OP.svg';
+    default: return null;
+  }
+};
