@@ -4,13 +4,18 @@ const COVALENT_BASE_URL = 'https://api.covalenthq.com/v1';
 export const SUPPORTED_CHAINS = {
   ETHEREUM: '1',
   BSC: '56',
-  // Add more chains as needed, e.g., POLYGON: '137'
+  ARBITRUM: '42161',
+  OPTIMISM: '10',
+  POLYGON: '137',
+  // Add more chains as needed
 };
 
 const CHAIN_ID_TO_NAME_MAP = {
   '1': 'eth-mainnet',
   '56': 'bsc-mainnet',
-  '137': 'matic-mainnet', // Example for Polygon
+  '137': 'matic-mainnet',
+  '42161': 'arbitrum-mainnet',
+  '10': 'optimism-mainnet',
   // Add other mappings as you support more chains
 };
 
@@ -19,37 +24,57 @@ const chainIdToGoldRushChainName = (chainId) => {
 };
 
 export const getChainNameFromId = (chainId) => {
-    for (const name in SUPPORTED_CHAINS) {
-        if (SUPPORTED_CHAINS[name] === chainId) {
-            return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-        }
+  for (const name in SUPPORTED_CHAINS) {
+    if (SUPPORTED_CHAINS[name] === chainId) {
+      return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     }
-    const goldRushName = chainIdToGoldRushChainName(chainId);
-    if (goldRushName.includes('-')) { // e.g. eth-mainnet -> Eth Mainnet
-        return goldRushName.split('-')[0].toUpperCase() + ' ' + goldRushName.split('-')[1].charAt(0).toUpperCase() + goldRushName.split('-')[1].slice(1);
-    }
-    return 'Unknown Chain';
+  }
+  const goldRushName = chainIdToGoldRushChainName(chainId);
+  if (goldRushName.includes('-')) { // e.g. eth-mainnet -> Eth Mainnet
+    return goldRushName.split('-')[0].toUpperCase() + ' ' + goldRushName.split('-')[1].charAt(0).toUpperCase() + goldRushName.split('-')[1].slice(1);
+  }
+  return 'Unknown Chain';
 };
 
+export const getChainExplorer = (chainId) => {
+  switch (chainId) {
+    case SUPPORTED_CHAINS.ETHEREUM: return 'https://etherscan.io';
+    case SUPPORTED_CHAINS.BSC: return 'https://bscscan.com';
+    case SUPPORTED_CHAINS.POLYGON: return 'https://polygonscan.com';
+    case SUPPORTED_CHAINS.ARBITRUM: return 'https://arbiscan.io';
+    case SUPPORTED_CHAINS.OPTIMISM: return 'https://optimistic.etherscan.io';
+    default: return 'https://etherscan.io';
+  }
+};
 
-async function fetchFromCovalent(endpointPath) {
+async function fetchFromCovalent(endpointPath, params = {}) {
   const goldRushChainName = endpointPath.split('/')[0]; // e.g. "eth-mainnet" from "eth-mainnet/address/..."
   if (!CHAIN_ID_TO_NAME_MAP[Object.keys(CHAIN_ID_TO_NAME_MAP).find(key => CHAIN_ID_TO_NAME_MAP[key] === goldRushChainName)]) {
-      console.warn(`Chain name ${goldRushChainName} might not be directly supported or mapped for GoldRush. Ensure endpoint is correct.`);
+    console.warn(`Chain name ${goldRushChainName} might not be directly supported or mapped for GoldRush. Ensure endpoint is correct.`);
   }
 
-  const url = `${COVALENT_BASE_URL}/${endpointPath}`;
+  // Construct URL with query parameters
+  const queryParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    queryParams.append(key, value);
+  });
+  
+  const queryString = queryParams.toString();
+  const url = `${COVALENT_BASE_URL}/${endpointPath}${queryString ? `?${queryString}` : ''}`;
+  
   try {
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${COVALENT_API_KEY}`,
       },
     });
+    
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Covalent API Error Response:', errorData);
       throw new Error(`API request failed: ${errorData.error_message || response.statusText} (Status: ${response.status})`);
     }
+    
     return await response.json();
   } catch (error) {
     console.error('Fetch error details:', error);
@@ -64,8 +89,14 @@ export async function getTokenBalances(chainId, walletAddress) {
   const goldrushChainName = chainIdToGoldRushChainName(chainId);
   if (!goldrushChainName) throw new Error(`Unsupported chain ID: ${chainId}`);
 
-  const endpoint = `${goldrushChainName}/address/${walletAddress}/balances_v2/?quote-currency=USD&nft=false`;
-  const data = await fetchFromCovalent(endpoint);
+  const endpoint = `${goldrushChainName}/address/${walletAddress}/balances_v2/`;
+  const params = {
+    'quote-currency': 'USD',
+    'nft': 'false',
+    'no-nft-fetch': 'true'
+  };
+  
+  const data = await fetchFromCovalent(endpoint, params);
   return (data.data.items || []).map(item => ({
     ...item,
     chain_id: chainId,
@@ -80,16 +111,109 @@ export async function getTransactionHistory(chainId, walletAddress, { pageNumber
   const goldrushChainName = chainIdToGoldRushChainName(chainId);
   if (!goldrushChainName) throw new Error(`Unsupported chain ID: ${chainId}`);
 
-  const endpoint = `${goldrushChainName}/address/${walletAddress}/transactions_v3/?quote-currency=USD&page-size=${pageSize}&page-number=${pageNumber}&no-logs=false`;
-  const data = await fetchFromCovalent(endpoint);
+  const endpoint = `${goldrushChainName}/address/${walletAddress}/transactions_v3/`;
+  const params = {
+    'quote-currency': 'USD',
+    'page-size': pageSize,
+    'page-number': pageNumber,
+    'no-logs': 'false'
+  };
+  
+  const data = await fetchFromCovalent(endpoint, params);
   return {
     transactions: (data.data.items || []).map(tx => ({
-        ...tx,
-        chain_id: chainId,
-        chain_name: getChainNameFromId(chainId)
+      ...tx,
+      chain_id: chainId,
+      chain_name: getChainNameFromId(chainId)
     })),
     pagination: data.data.pagination,
   };
+}
+
+// New API methods for additional functionality
+
+export async function getAllChainsBalances(walletAddress) {
+  if (!walletAddress) throw new Error('Wallet address is required for getAllChainsBalances.');
+  
+  const endpoint = `address/${walletAddress}/balances_v2/`;
+  const params = {
+    'quote-currency': 'USD',
+    'nft': 'false'
+  };
+  
+  const data = await fetchFromCovalent(endpoint, params);
+  return data.data;
+}
+
+export async function getCrossChainTransactions(walletAddress) {
+  if (!walletAddress) throw new Error('Wallet address is required for getCrossChainTransactions.');
+  
+  const endpoint = `address/${walletAddress}/transactions_v3/`;
+  const params = {
+    'quote-currency': 'USD'
+  };
+  
+  const data = await fetchFromCovalent(endpoint, params);
+  return data.data;
+}
+
+export async function getHistoricalPortfolioValue(walletAddress, days = 30) {
+  if (!walletAddress) throw new Error('Wallet address is required for getHistoricalPortfolioValue.');
+  
+  const endpoint = `address/${walletAddress}/portfolio_v2/`;
+  const params = {
+    'days': days,
+    'quote-currency': 'USD'
+  };
+  
+  const data = await fetchFromCovalent(endpoint, params);
+  return data.data;
+}
+
+export async function getERC20Transfers(chainId, walletAddress, tokenAddress) {
+  if (!walletAddress) throw new Error('Wallet address is required for getERC20Transfers.');
+  if (!chainId) throw new Error('Chain ID is required for getERC20Transfers.');
+  if (!tokenAddress) throw new Error('Token address is required for getERC20Transfers.');
+  
+  const goldrushChainName = chainIdToGoldRushChainName(chainId);
+  if (!goldrushChainName) throw new Error(`Unsupported chain ID: ${chainId}`);
+  
+  const endpoint = `${goldrushChainName}/address/${walletAddress}/transfers_v2/`;
+  const params = {
+    'contract-address': tokenAddress,
+    'quote-currency': 'USD'
+  };
+  
+  const data = await fetchFromCovalent(endpoint, params);
+  return data.data;
+}
+
+export async function getNativeTokenBalance(chainId, walletAddress) {
+  if (!walletAddress) throw new Error('Wallet address is required for getNativeTokenBalance.');
+  if (!chainId) throw new Error('Chain ID is required for getNativeTokenBalance.');
+  
+  const goldrushChainName = chainIdToGoldRushChainName(chainId);
+  if (!goldrushChainName) throw new Error(`Unsupported chain ID: ${chainId}`);
+  
+  const endpoint = `${goldrushChainName}/address/${walletAddress}/balances_native/`;
+  const params = {
+    'quote-currency': 'USD'
+  };
+  
+  const data = await fetchFromCovalent(endpoint, params);
+  return data.data;
+}
+
+export async function getWalletActivity(walletAddress, days = 30) {
+  if (!walletAddress) throw new Error('Wallet address is required for getWalletActivity.');
+  
+  const endpoint = `address/${walletAddress}/activity/`;
+  const params = {
+    'days': days
+  };
+  
+  const data = await fetchFromCovalent(endpoint, params);
+  return data.data;
 }
 
 export async function trackWalletClick(address, connectedWallet) {
@@ -133,14 +257,16 @@ export async function logReferralConnection(referrerAddress, newConnectedWallet)
 }
 
 export function getReferredUsersCount(referrerAddress) {
-    if (!referrerAddress) return 0;
-    const referrals = JSON.parse(localStorage.getItem('referralsData')) || {};
-    return referrals[referrerAddress] ? referrals[referrerAddress].length : 0;
+  if (!referrerAddress) return 0;
+  const referrals = JSON.parse(localStorage.getItem('referralsData')) || {};
+  return referrals[referrerAddress] ? referrals[referrerAddress].length : 0;
 }
 
 export const getNativeTokenSymbolForChain = (chainId) => {
-    if (chainId === SUPPORTED_CHAINS.ETHEREUM) return 'ETH';
-    if (chainId === SUPPORTED_CHAINS.BSC) return 'BNB';
-    if (chainId === SUPPORTED_CHAINS.POLYGON) return 'MATIC';
-    return 'NATIVE';
+  if (chainId === SUPPORTED_CHAINS.ETHEREUM) return 'ETH';
+  if (chainId === SUPPORTED_CHAINS.BSC) return 'BNB';
+  if (chainId === SUPPORTED_CHAINS.POLYGON) return 'MATIC';
+  if (chainId === SUPPORTED_CHAINS.ARBITRUM) return 'ETH';
+  if (chainId === SUPPORTED_CHAINS.OPTIMISM) return 'ETH';
+  return 'NATIVE';
 };

@@ -2,8 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './App.css'; // Your global styles
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
-import { Dashboard } from './components/Dashboard';
+import { Dashboard } from './components/Dashboard/Dashboard';
 import { Footer } from './components/Footer';
+import { Toaster } from "@/components/ui/sonner";
 import { getReferrerFromUrl, logReferralConnection, generateReferralLink, getReferredUsersCount, trackWalletClick } from './services/api';
 
 function App() {
@@ -93,6 +94,15 @@ function App() {
   const handleTrackAddress = async (address) => {
     setError('');
     if (address && address.trim() !== "") {
+        // Basic address validation (Ethereum addresses are 42 chars long, starting with 0x)
+        const isValidEthAddress = /^0x[a-fA-F0-9]{40}$/.test(address.trim());
+        const isValidENS = /^([a-zA-Z0-9]+([-._][a-zA-Z0-9]+)*\.)+eth$/.test(address.trim());
+        
+        if (!isValidEthAddress && !isValidENS) {
+            setError("Invalid address format. Please enter a valid wallet address.");
+            return;
+        }
+        
         setTrackedAddress(address.trim());
         await trackWalletClick(address.trim(), connectedWallet);
     } else {
@@ -105,10 +115,12 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <Navbar connectedWallet={connectedWallet} onConnectWallet={handleConnectWallet} />
-      <main className="flex-grow container mx-auto px-2 sm:px-4 py-8">
+      {/* Add a white line between Navbar and Hero */}
+      <div className="border-t border-white/20"></div>
+      <main>
         {error && <div className="bg-red-800/70 text-white p-3 rounded-md text-center mb-4 mx-auto max-w-2xl">{error}</div>}
         <Hero onTrackWallet={handleTrackAddress} />
-        { displayAddress && (
+        {displayAddress && (
           <Dashboard
             key={displayAddress} // Re-mount dashboard if tracked/connected address changes
             walletAddress={displayAddress}
@@ -121,6 +133,7 @@ function App() {
         )}
       </main>
       <Footer />
+      <Toaster position="top-right" />
     </div>
   );
 }
