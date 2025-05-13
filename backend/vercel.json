@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "smartwhalesai-backend",
+  "name": "smartwhales-backend",
   "builds": [
     {
       "src": "server.js",
