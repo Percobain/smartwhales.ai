@@ -19,7 +19,7 @@ require('./config/db');
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173'], // Add your frontend URL
+  origin: ['https://smartwhalesai-fe.vercel.app/', 'http://localhost:3000', 'http://localhost:5173'], // Add your frontend URL
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 })); // Enable CORS for all routes
