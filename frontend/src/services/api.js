@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const COVALENT_API_KEY = import.meta.env.VITE_GOLDRUSH_API_KEY;
 const COVALENT_BASE_URL = 'https://api.covalenthq.com/v1';
-const BACKEND_API_BASE_URL = 'http://localhost:5000'; // Define your backend base URL
+const BACKEND_API_BASE_URL = import.meta.env.VITE_BACKEND_URL; // Define your backend base URL
 
 export const SUPPORTED_CHAINS = {
   ETHEREUM: '1',
