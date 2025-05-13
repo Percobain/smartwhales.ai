@@ -19,9 +19,9 @@ require('./config/db');
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-  origin: ['https://smartwhalesai-fe.vercel.app/', 'http://localhost:3000', 'http://localhost:5173'], // Add your frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: ['https://smartwhalesai-fe.vercel.app', 'http://localhost:3000', 'http://localhost:5173'], // Removed trailing slash from production URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Added 'OPTIONS'
+  allowedHeaders: ['Content-Type', 'Authorization'],
 })); // Enable CORS for all routes
 app.use(express.json()); // Parse JSON request body
 
