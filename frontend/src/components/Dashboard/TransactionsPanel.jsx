@@ -51,8 +51,12 @@ const TransactionsPanel = ({
         console.error(`Transactions Error (Chain ${chainId}):`, e);
         setError(`Failed to load transactions for ${getChainNameFromId(chainId)}. ${e.message}`);
         
-        toast.error(`${getChainNameFromId(chainId)} transactions error`, {
-          description: e.message || "Failed to load transaction history"
+        toast.error(`Failed to load ${getChainNameFromId(chainId)} trades`, {
+          description: (
+            <span style={{ color: "black" }}>
+              We couldn't fetch the trading history. Please try again later.
+            </span>
+          )
         });
       }
     }

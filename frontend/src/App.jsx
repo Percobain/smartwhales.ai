@@ -8,6 +8,7 @@ import { Footer } from './components/Footer';
 import { Toaster } from "@/components/ui/sonner";
 import { getReferrerFromUrl, logReferralConnection, generateReferralLink, getReferredUsersCount, trackWalletClick } from './services/api';
 import Clarity from '@microsoft/clarity';
+import { toast } from "sonner"; // Add this import at the top with other imports
 
 const BACKEND_API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID;
@@ -121,12 +122,26 @@ function App() {
   const handleTrackAddress = async (addressToTrack) => {
     setError('');
     const trimmed = addressToTrack.trim();
+    
     if (!connectedWallet) {
-      setError('Please connect your wallet first.');
+      toast.error("Please connect your wallet first", {
+        description: (
+          <span style={{ color: "black" }}>
+            Connect your wallet to start tracking addresses
+          </span>
+        )
+      });
       return;
     }
+
     if (!/^0x[a-fA-F0-9]{40}$/.test(trimmed) && !/^([a-zA-Z0-9]+([-._][a-zA-Z0-9]+)*\.)+eth$/.test(trimmed)) {
-      setError('Invalid address format. Please enter a valid wallet address.');
+      toast.error("Invalid address format", {
+        description: (
+          <span style={{ color: "black" }}>
+            Please enter a valid Ethereum address or ENS name
+          </span>
+        )
+      });
       return;
     }
 
@@ -158,7 +173,13 @@ function App() {
       }
     } catch (err) {
       console.error('trackWalletClick error:', err);
-      setError(err.message || 'Failed to track address.');
+      toast.error("Failed to track address", {
+        description: (
+          <span style={{ color: "black" }}>
+            { "Failed to track address. Please try again later." }
+          </span>
+        )
+      });
     }
   };
   
@@ -167,14 +188,12 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <Navbar connectedWallet={connectedWallet} onConnectWallet={handleConnectWallet} />
-      {/* Add a white line between Navbar and Hero */}
       <div className="border-t border-white/20"></div>
       <main className='bg-black'>
-        {error && <div className="bg-red-800/70 text-white p-3 rounded-md text-center mb-4 mx-auto max-w-2xl">{error}</div>}
         <Hero onTrackWallet={handleTrackAddress} />
         {displayAddress && (
           <Dashboard
-            key={displayAddress} // Re-mount dashboard if tracked/connected address changes
+            key={displayAddress}
             walletAddress={displayAddress}
             connectedWalletAddress={connectedWallet}
             referralLink={referralLink}
@@ -185,7 +204,7 @@ function App() {
         )}
       </main>
       <Footer />
-      <Toaster position="top-right" />
+      <Toaster />
     </div>
   );
 }
