@@ -7,7 +7,12 @@ import { Dashboard } from './components/Dashboard/Dashboard';
 import { Footer } from './components/Footer';
 import { Toaster } from "@/components/ui/sonner";
 import { getReferrerFromUrl, logReferralConnection, generateReferralLink, getReferredUsersCount, trackWalletClick } from './services/api';
+import Clarity from '@microsoft/clarity';
+
 const BACKEND_API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
+const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID;
+
+Clarity.init(projectId);
 
 function App() {
   const [connectedWallet, setConnectedWallet] = useState(null);
