@@ -305,11 +305,13 @@ const TransactionsList = ({
                           <div className={cn("absolute inset-0 blur-sm rounded-full opacity-70", 
                             direction === 'receive' ? "bg-emerald-900/50" : "bg-rose-900/50"
                           )}></div>
-                          <Avatar className="w-12 h-12 bg-zinc-800 border border-zinc-700 relative z-10">
+                          <Avatar className="w-12 h-12 bg-zinc-800 border border-zinc-700 relative z-10 flex items-center justify-center">
                             {tokenInfo?.logo ? (
-                              <img src={tokenInfo.logo} alt={tokenInfo.symbol} className="rounded-full" />
+                              <img src={tokenInfo.logo} alt={tokenInfo.symbol}
+                                   className="w-full h-full object-cover rounded-full" />
                             ) : getChainLogo(tokenInfo.chainId) ? (
-                              <img src={getChainLogo(tokenInfo.chainId)} alt={getChainNameFromId(tokenInfo.chainId)} className="rounded-full" />
+                              <img src={getChainLogo(tokenInfo.chainId)} alt={getChainNameFromId(tokenInfo.chainId)}
+                                   className="w-full h-full object-cover rounded-full" />
                             ) : (
                               <div className="flex items-center justify-center w-full h-full text-lg font-bold uppercase">
                                 {tokenInfo?.symbol?.slice(0, 3) || 'N/A'}
