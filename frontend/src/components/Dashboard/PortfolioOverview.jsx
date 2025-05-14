@@ -248,7 +248,7 @@ const PortfolioOverview = ({
                         )}
                         
                         {missingCriteria.some(criteria => criteria.includes("more referrals")) ? (
-                          <div className="text-red-400">○ Need more referrals ({referredUsersCount}/3)</div>
+                          <div className="text-red-400">○ Need 2+ referrals</div>
                         ) : (
                           <div className="text-gray-300">✓ Referred 2+ users</div>
                         )}
