@@ -379,7 +379,7 @@ const TradesList = ({
                             </div>
                           ) : (
                             <div className="text-gray-500 italic flex items-center justify-end">
-                              <div>Unknown output</div>
+                              <div>Unknown</div>
                               <Avatar className="w-10 h-10 ml-3 bg-zinc-800/50 border border-zinc-700/50">
                                 {getChainLogo(chainId) ? (
                                   <img src={getChainLogo(chainId)} alt={getChainNameFromId(chainId)} className="rounded-full opacity-50" />

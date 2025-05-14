@@ -213,7 +213,7 @@ const TradesPanel = ({
                               </div>
                             ))
                           ) : (
-                            <div className="text-gray-500 italic">Unknown input</div>
+                            <div className="text-gray-500 italic">Unknown</div>
                           )}
                         </div>
                         
@@ -231,7 +231,7 @@ const TradesPanel = ({
                               </div>
                             ))
                           ) : (
-                            <div className="text-gray-500 italic">Unknown output</div>
+                            <div className="text-gray-500 italic">Unknown</div>
                           )}
                         </div>
                       </div>
