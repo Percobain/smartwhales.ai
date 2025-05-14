@@ -386,19 +386,10 @@ export async function checkAirdropEligibility(walletAddress) {
   if (!walletAddress) throw new Error('Wallet address is required for checkAirdropEligibility');
   
   try {
-    let totalValue = 0;
-    let interactedWithQualifyingProtocols = false;
-    let holdsDiverseAssets = false;
     let hasRecentActivity = false;
-    
+
     for (const chainId of Object.values(SUPPORTED_CHAINS)) {
       try {
-        const balances = await getTokenBalances(chainId, walletAddress);
-        totalValue += balances.reduce((sum, token) => sum + (token.quote || 0), 0);
-        if (balances.length >= 3) {
-          holdsDiverseAssets = true;
-        }
-        
         const txHistory = await getTransactionHistory(chainId, walletAddress, { pageSize: 10 });
         const now = new Date();
         const thirtyDaysAgo = new Date(new Date().setDate(now.getDate() - 30));
@@ -409,39 +400,42 @@ export async function checkAirdropEligibility(walletAddress) {
         
         if (hasRecentTx) {
           hasRecentActivity = true;
+          break;
         }
       } catch (error) {
-        console.error(`Failed to check airdrop eligibility on chain ${chainId}:`, error);
+        console.error(`Failed to check transaction history on chain ${chainId}:`, error);
       }
     }
     
-    const valueThreshold = 500;
-    const isEligible = 
-      totalValue >= valueThreshold || 
-      (holdsDiverseAssets && hasRecentActivity) || 
-      interactedWithQualifyingProtocols;
-    
+    const referredUsersCount = await getReferredUsersCount(walletAddress);
+    const hasEnoughReferrals = referredUsersCount >= 3;
+
+    const isEligible = hasRecentActivity && hasEnoughReferrals;
+
     const reasons = [];
-    if (totalValue >= valueThreshold) {
-      reasons.push(`Portfolio value above $${valueThreshold}`);
-    }
-    if (holdsDiverseAssets) {
-      reasons.push("Holds diverse assets");
-    }
     if (hasRecentActivity) {
-      reasons.push("Active in the last 30 days");
+      reasons.push("Active wallet in the last 30 days");
     }
-    if (interactedWithQualifyingProtocols) {
-      reasons.push("Used qualifying protocols");
+    if (hasEnoughReferrals) {
+      reasons.push(`Referred ${referredUsersCount} users (minimum 3 required)`);
     }
     
     return {
       eligible: isEligible,
-      reasons: isEligible ? reasons : []
+      reasons: isEligible ? reasons : [],
+      missingCriteria: isEligible ? [] : [
+        !hasRecentActivity ? "Wallet must be active in the last 30 days" : null,
+        !hasEnoughReferrals ? `Need ${3 - referredUsersCount} more referrals (you have ${referredUsersCount})` : null
+      ].filter(Boolean)
     };
   } catch (error) {
     console.error("Error checking airdrop eligibility:", error);
-    return { eligible: false, reasons: [] };
+    return { 
+      eligible: false, 
+      reasons: [],
+      missingCriteria: ["Error checking eligibility"],
+      error: error.message
+    };
   }
 }
 

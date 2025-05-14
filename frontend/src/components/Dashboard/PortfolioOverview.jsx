@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getTokenBalances, getTrackingStats } from '../../services/api';
+import { getTokenBalances, getTrackingStats, checkAirdropEligibility } from '../../services/api';
 import { FaWallet, FaCopy, FaCheckCircle, FaSpinner } from 'react-icons/fa';
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"; // Removed CardDescription as it wasn't used
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 // import { Avatar } from "@/components/ui/avatar";
 import { AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import TokenDisplay from './TokenDisplay';
 
 const PortfolioOverview = ({
@@ -17,7 +18,9 @@ const PortfolioOverview = ({
   isAirdropEligible,
   eligibilityReasons = [],
   setErrorApp,
-  connectedWalletAddress
+  connectedWalletAddress,
+  setIsAirdropEligible,
+  setEligibilityReasons
 }) => {
   const [portfolioData, setPortfolioData] = useState({
     totalValue: 0,
@@ -29,6 +32,9 @@ const PortfolioOverview = ({
   const [error, setError] = useState(null);
   const [copiedReferral, setCopiedReferral] = useState(false);
   const [trackedWallets, setTrackedWallets] = useState(0); // Added state for tracked wallets
+  const [checkingEligibility, setCheckingEligibility] = useState(false);
+  const [missingCriteria, setMissingCriteria] = useState([]);
+  const [eligibilityError, setEligibilityError] = useState(null);
 
   const shortWalletAddress = walletAddress
     ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
@@ -113,6 +119,36 @@ const PortfolioOverview = ({
      });
 }, [connectedWalletAddress]);
 
+  useEffect(() => {
+    const checkEligibility = async () => {
+      if (!walletAddress) return;
+      
+      setCheckingEligibility(true);
+      setEligibilityError(null);
+      
+      try {
+        const result = await checkAirdropEligibility(walletAddress);
+        if (result.eligible !== undefined) {
+          // Update parent component state through props
+          if (typeof setIsAirdropEligible === 'function') {
+            setIsAirdropEligible(result.eligible);
+          }
+          if (typeof setEligibilityReasons === 'function') {
+            setEligibilityReasons(result.reasons || []);
+          }
+          setMissingCriteria(result.missingCriteria || []);
+        }
+      } catch (error) {
+        console.error("Error checking airdrop eligibility:", error);
+        setEligibilityError(error.message);
+      } finally {
+        setCheckingEligibility(false);
+      }
+    };
+    
+    checkEligibility();
+  }, [walletAddress]);
+
   const handleCopyReferral = () => {
     if (!referralLink) return;
     navigator.clipboard.writeText(referralLink)
@@ -182,15 +218,43 @@ const PortfolioOverview = ({
 
               <div className="p-3 bg-green-900/20 border border-green-700/30 rounded-lg">
                 <div className="text-xs uppercase text-gray-400">Airdrop Eligible</div>
-                <div className={`text-lg font-bold ${isAirdropEligible ? 'text-green-400 animate-pulse' : 'text-red-400'}`}>
-                  {isAirdropEligible ? 'Yes!' : 'No'}
-                </div>
-                {isAirdropEligible && eligibilityReasons.length > 0 && (
-                  <div className="mt-1">
-                    {eligibilityReasons.map((reason, index) => (
-                      <div key={index} className="text-xs text-gray-400">• {reason}</div>
-                    ))}
+                
+                {checkingEligibility ? (
+                  <div className="flex items-center gap-2 my-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                    <span className="text-gray-300 text-sm">Checking...</span>
                   </div>
+                ) : eligibilityError ? (
+                  <div className="text-red-400 text-sm my-1">Unable to check right now</div>
+                ) : (
+                  <>
+                    <div className={`text-lg font-bold ${isAirdropEligible ? 'text-green-400' : 'text-red-400'}`}>
+                      {isAirdropEligible ? 'Yes!' : 'No'}
+                    </div>
+                    
+                    {isAirdropEligible && (
+                      <div className="mt-1 text-xs text-gray-300">
+                        <div>✓ Active wallet in the last 30 days</div>
+                        <div>✓ Referred 2+ users</div>
+                      </div>
+                    )}
+                    
+                    {!isAirdropEligible && missingCriteria.length > 0 && (
+                      <div className="mt-1 text-xs">
+                        {missingCriteria.includes("Wallet must be active in the last 30 days") ? (
+                          <div className="text-red-400">○ Wallet not active recently</div>
+                        ) : (
+                          <div className="text-gray-300">✓ Active wallet in the last 30 days</div>
+                        )}
+                        
+                        {missingCriteria.some(criteria => criteria.includes("more referrals")) ? (
+                          <div className="text-red-400">○ Need more referrals ({referredUsersCount}/3)</div>
+                        ) : (
+                          <div className="text-gray-300">✓ Referred 2+ users</div>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
