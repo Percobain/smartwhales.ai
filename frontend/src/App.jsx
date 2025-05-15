@@ -146,28 +146,66 @@ function App() {
     }
 
     try {
-      // Locally generate the exact same format your backend expects
-      const messageToSign =
-        `I am signing this message to authenticate with SmartWhales.ai as ${connectedWallet}. Timestamp: ${Date.now()}`;
-
-      // Sign via MetaMask RPC directly
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [messageToSign, connectedWallet]
-      });
-
-      // Call tracking endpoint
+      // Check if already tracked before API call
+      const trackedKey = `tracked_${connectedWallet}_${trimmed}`.toLowerCase();
+      if (localStorage.getItem(trackedKey)) {
+        // Set tracked address anyway to display dashboard
+        setTrackedAddress(trimmed);
+        
+        // Show toast notification for already tracked address
+        toast.info("Address already tracked", {
+          description: (
+            <span style={{ color: "black" }}>
+              You're already tracking this address
+            </span>
+          )
+        });
+        
+        // Still scroll to dashboard for better UX
+        setTimeout(() => {
+          const dashboardElement = document.getElementById('dashboard-section');
+          if (dashboardElement) {
+            dashboardElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start'
+            });
+          }
+        }, 100);
+        
+        return;
+      }
+      
+      // If not already tracked, proceed with tracking
       const result = await trackWalletClick(
         trimmed,
         connectedWallet,
-        signature,
-        messageToSign,
         currentChainId
       );
 
       if (result.success) {
         setTrackedAddress(trimmed);
-        // Optionally refresh stats…
+        
+        // Only show success toast if it's a new tracking
+        if (result.message !== 'Already tracked') {
+          toast.success("Address tracked successfully", {
+            description: (
+              <span style={{ color: "black" }}>
+                Now tracking {trimmed.slice(0, 6)}...{trimmed.slice(-4)}
+              </span>
+            )
+          });
+        }
+        
+        // Add automatic scrolling to dashboard
+        setTimeout(() => {
+          const dashboardElement = document.getElementById('dashboard-section');
+          if (dashboardElement) {
+            dashboardElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start'
+            });
+          }
+        }, 100);
       } else {
         throw new Error(result.message);
       }

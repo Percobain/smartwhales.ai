@@ -62,6 +62,22 @@ const trackWalletClick = async (req, res) => {
       });
     }
 
+    // Check if this wallet-tracked pair already exists
+    const existingTracking = await Tracking.findOne({
+      walletAddress: walletAddress.toLowerCase(),
+      trackedAddress: trackedAddress.toLowerCase(),
+      eventType: 'track'
+    });
+
+    // If already tracked, just return success
+    if (existingTracking) {
+      return res.status(200).json({
+        success: true,
+        message: 'Wallet already tracked',
+        data: { trackingId: existingTracking._id }
+      });
+    }
+
     // Create or update user record
     await User.findOneAndUpdate(
       { walletAddress },

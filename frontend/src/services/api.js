@@ -198,29 +198,30 @@ export async function getWalletActivity(walletAddress, days = 30) {
   return data.data;
 }
 
-export async function trackWalletClick(trackedAddress, connectedUserWallet, signature, message, currentChainId) {
-  console.log('[api.js] trackWalletClick: Received parameters:', {
-    trackedAddress,
-    connectedUserWallet,
-    signature, // Log the received signature
-    message,   // Log the received message
-    currentChainId
-  });
-
+export async function trackWalletClick(trackedAddress, connectedUserWallet, currentChainId) {
   try {
+    // Check local storage to see if this wallet has already been tracked
+    const trackedKey = `tracked_${connectedUserWallet}_${trackedAddress}`.toLowerCase();
+    if (localStorage.getItem(trackedKey)) {
+      console.log('This wallet has already been tracked, skipping API call');
+      return { success: true, message: 'Already tracked' };
+    }
+    
     const payload = {
       walletAddress: connectedUserWallet,
       trackedAddress: trackedAddress,
-      signature, 
-      message,   
+      // Remove signature and message fields
       metadata: {
         chainId: currentChainId || '',
         userAgent: navigator.userAgent
       }
     };
-    console.log('[api.js] trackWalletClick: Sending this payload to backend:', payload);
 
     const response = await axios.post(`${BACKEND_API_BASE_URL}/api/tracking/click`, payload);
+    
+    // Store in localStorage that this wallet has been tracked
+    localStorage.setItem(trackedKey, 'true');
+    
     return response.data;
   } catch (error) {
     console.error('Error in trackWalletClick:', error.response?.data || error.message);
