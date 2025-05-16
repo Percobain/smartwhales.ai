@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './App.css'; // Your global styles
+import './App.css';
 import { Navbar } from './components/Navbar';
 import { ethers } from 'ethers';
 import { Hero } from './components/Hero';
@@ -8,7 +8,7 @@ import { Footer } from './components/Footer';
 import { Toaster } from "@/components/ui/sonner";
 import { getReferrerFromUrl, logReferralConnection, generateReferralLink, getReferredUsersCount, trackWalletClick } from './services/api';
 import Clarity from '@microsoft/clarity';
-import { toast } from "sonner"; // Add this import at the top with other imports
+import { toast } from "sonner";
 
 const BACKEND_API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 const projectId = import.meta.env.VITE_CLARITY_PROJECT_ID;

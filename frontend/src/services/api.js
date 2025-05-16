@@ -10,6 +10,7 @@ export const SUPPORTED_CHAINS = {
   POLYGON: '137',
   ARBITRUM: '42161',
   OPTIMISM: '10',
+  BASE: '8453',
   // BITCOIN: 'btc-mainnet'
 };
 
@@ -21,7 +22,8 @@ export const chainIdToGoldRushChainName = (chainId) => {
     '56': 'bsc-mainnet',
     '137': 'matic-mainnet',
     '42161': 'arbitrum-mainnet',
-    '10': 'optimism-mainnet'
+    '10': 'optimism-mainnet',
+    '8453': 'base-mainnet'
   };
   return chainMap[chainId] || chainId;
 };
@@ -36,7 +38,8 @@ export const getChainNameFromId = (chainId) => {
     [SUPPORTED_CHAINS.BSC]: 'BSC',
     [SUPPORTED_CHAINS.POLYGON]: 'Polygon',
     [SUPPORTED_CHAINS.ARBITRUM]: 'Arbitrum',
-    [SUPPORTED_CHAINS.OPTIMISM]: 'Optimism'
+    [SUPPORTED_CHAINS.OPTIMISM]: 'Optimism',
+    [SUPPORTED_CHAINS.BASE]: 'Base',
   };
   return chainNames[chainId] || 'Unknown';
 };
@@ -48,6 +51,7 @@ export const getChainExplorer = (chainId) => {
     case SUPPORTED_CHAINS.POLYGON: return 'https://polygonscan.com';
     case SUPPORTED_CHAINS.ARBITRUM: return 'https://arbiscan.io';
     case SUPPORTED_CHAINS.OPTIMISM: return 'https://optimistic.etherscan.io';
+    case SUPPORTED_CHAINS.BASE: return 'https://basescan.org';
     // case SUPPORTED_CHAINS.BITCOIN: return 'https://mempool.space';
     default: return 'https://blockscan.com';
   }
@@ -537,6 +541,7 @@ export const getChainLogo = (chainId) => {
     case SUPPORTED_CHAINS.POLYGON: return '/POLYGON.svg';
     case SUPPORTED_CHAINS.ARBITRUM: return '/ARB.svg';
     case SUPPORTED_CHAINS.OPTIMISM: return '/OP.svg';
+    case SUPPORTED_CHAINS.BASE: return '/BASE.svg';
     // case SUPPORTED_CHAINS.BITCOIN: return '/BTC.svg';
     default: return null;
   }
