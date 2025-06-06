@@ -19,7 +19,14 @@ require('./config/db');
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-  origin: ['https://wallets.smartwhales.ai', 'https://smartwhalesai-fe.vercel.app', 'http://localhost:3000', 'http://localhost:5173'], // Removed trailing slash from production URL
+  origin: [
+    'https://wallets.smartwhales.ai', 
+    'https://smartwhalesai-fe.vercel.app', 
+    'https://www.smartwhales.cc',  // Add this line
+    'https://smartwhales.cc',      // Also add without www for consistency
+    'http://localhost:3000', 
+    'http://localhost:5173'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Added 'OPTIONS'
   allowedHeaders: ['Content-Type', 'Authorization'],
 })); // Enable CORS for all routes
